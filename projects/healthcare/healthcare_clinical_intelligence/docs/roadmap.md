@@ -1,23 +1,24 @@
 # Roadmap
 
-## Phase 1 — FHIR clinical foundation
+## Delivered foundation
 
-1. Define PostgreSQL schemas and load metadata.
-2. Ingest FHIR Patient, Encounter, and Observation resources to raw storage.
-3. Build staging transformations, validation rules, quarantine, and reference resolution.
-4. Build canonical entities, reconciliation reporting, and ED-utilization mart.
-5. Deliver DE-001 through DE-006 evidence and test coverage.
+- FHIR file, REST, incremental-checkpoint, PostgreSQL, and Airflow workflows.
+- Canonical patient, encounter, observation, condition, procedure, medication, provider, organization, and coverage entities.
+- Controlled claims header/detail and HL7 ORU result paths.
+- Reconciliation, quarantine, quality controls, and idempotent reruns.
+- ED activity, clinical activity, claims-cost marts, and dashboard export contract.
+- Temporally valid readmission cohort and reproducible baseline model.
 
-## Later phases
+## Next extensions
 
 | Phase | Outcome |
 | --- | --- |
-| 2. Analytics | Dimensional marts, KPI dictionary, Power BI, analyst tickets |
-| 3. Claims | Claim/claim-line model, payer costs, reconciliation |
-| 4. HL7 v2 | ADT, ORU, ORM parsing and canonical mappings |
-| 5. Data science | Temporally valid readmission cohort and reproducible baseline model |
-| 6. Quality/population health | Quality measures and utilization/risk workflows |
-| 7. OMOP | Partial mapping to OMOP CDM |
-| 8. Imaging | ImagingStudy, radiology metadata, and DICOM concepts |
+| Dashboard client | Build the Power BI file from the stable export contract and apply final visual-design choices |
+| Claims expansion | Add X12-like adjustment, diagnosis, procedure, provider, and payer dimensions |
+| HL7 v2 expansion | Add ADT lifecycle state and ORM order mappings beyond controlled validation |
+| Model governance | Add experiment tracking, calibration monitoring, subgroup review, and approval controls |
+| Quality/population health | Add eligibility-aware measures and utilization/risk workflows |
+| OMOP | Map a documented subset to OMOP CDM with vocabulary handling |
+| Imaging | Model ImagingStudy/radiology metadata and DICOM concepts without storing image pixels |
 
-Each phase begins only after the preceding one is reproducible, tested, and documented.
+Extensions should preserve the same source-fidelity, reconciliation, synthetic-only, and independent-validation standards.

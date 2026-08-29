@@ -11,6 +11,7 @@ from .analytics import clinical_activity_from_accepted, ed_utilization_from_acce
 from .ml import export_readmission_cohort
 from .fhir_client import publish_bundle
 from .modeling import train_readmission_baseline
+from .dashboard import export_dashboard_bundle
 
 
 def main() -> None:
@@ -79,6 +80,10 @@ def main() -> None:
     core.add_argument("--sql-root", type=Path, default=Path("sql"))
     quality = subparsers.add_parser("quality-report", help="Return core data-quality summary counts")
     quality.add_argument("--dsn", required=True)
+    dashboard = subparsers.add_parser("dashboard-export", help="Export dashboard-ready PostgreSQL datasets and a refresh manifest")
+    dashboard.add_argument("--dsn", required=True)
+    dashboard.add_argument("--output", type=Path, default=Path("output/dashboard"))
+    dashboard.add_argument("--model-report", type=Path)
     args = parser.parse_args()
     if args.command == "fhir-file":
         print(json.dumps(run_fhir_file(args.input, args.output), indent=2))
@@ -134,6 +139,9 @@ def main() -> None:
     elif args.command == "quality-report":
         with open_connection(args.dsn) as connection:
             print(json.dumps(database_quality_report(connection), indent=2))
+    elif args.command == "dashboard-export":
+        with open_connection(args.dsn) as connection:
+            print(json.dumps(export_dashboard_bundle(connection, args.output, args.model_report), indent=2))
 
 
 if __name__ == "__main__":

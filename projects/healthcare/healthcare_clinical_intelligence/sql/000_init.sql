@@ -9,3 +9,4 @@
 \ir core/020_core_schema.sql
 \ir marts/030_ed_utilization.sql
 \ir marts/031_claims_cost.sql
+\ir marts/032_clinical_activity.sql

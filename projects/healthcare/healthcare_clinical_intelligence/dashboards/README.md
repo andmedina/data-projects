@@ -1,6 +1,28 @@
-# Dashboards
+# Dashboard Data Product
 
-Power BI is the planned dashboard client. Begin with the `mart.ed_utilization_monthly` view and metric definitions in `docs/metric_dictionary.md`.
+Power BI is the planned dashboard client. The database-backed export command creates one refreshable bundle containing executive, utilization, clinical-activity, claims-cost, quality, and pipeline-operability datasets:
+
+```bash
+PYTHONPATH=src python -m healthcare_clinical_intelligence.cli dashboard-export \
+  --dsn "postgresql://healthcare_app:change-me@localhost:55432/healthcare_clinical_intelligence" \
+  --output output/dashboard \
+  --model-report output/readmission_baseline_report.json
+```
+
+The optional model report is validated as JSON and copied into the bundle. `manifest.json` records every dataset, filename, row count, generation timestamp, and optional model artifact.
+
+| Dataset | Intended page | Grain |
+| --- | --- | --- |
+| `executive_overview.csv` | Executive summary | one refresh snapshot |
+| `ed_utilization_monthly.csv` | ED activity | reporting month |
+| `clinical_activity_monthly.csv` | Clinical activity | reporting month |
+| `claim_cost_monthly.csv` | Claims cost | reporting month |
+| `data_quality.csv` | Data trust | quality control |
+| `pipeline_runs.csv` | Pipeline operations | pipeline run |
+
+Use the metric definitions in `docs/metric_dictionary.md`. Display the data refresh timestamp and validation status on every published page. Do not label ED encounter intensity as a population utilization rate.
+
+## File-only prototype
 
 For a file-based prototype, export dashboard-ready data without a database:
 

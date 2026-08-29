@@ -9,11 +9,11 @@ All data in this repository will be synthetic. It must never contain PHI.
 Phase 1 establishes a reproducible clinical/FHIR foundation:
 
 - Synthea-generated FHIR R4 data as the baseline source;
-- `Patient`, `Encounter`, and `Observation` ingestion;
+- `Patient`, `Encounter`, `Observation`, `Condition`, `Procedure`, `MedicationRequest`, `Practitioner`, `Organization`, and `Coverage` ingestion;
 - raw, staging, core, and analytics layers in PostgreSQL;
 - rejected-record quarantine and source-to-target reconciliation;
 - data-quality checks; and
-- one initial emergency-department utilization mart.
+- ED-activity, clinical-activity, and claims-cost marts with a dashboard export contract.
 
 The HAPI FHIR API, live PostgreSQL workflow, and Airflow execution are optional integration paths. The repository already includes controlled file-based HL7 v2 and claims validation, dashboard-ready ED exports, and a temporally correct readmission-cohort export. OMOP and imaging remain later extensions.
 
@@ -53,8 +53,8 @@ Implemented locally:
 - FHIR Bundle ingestion with validation, idempotency metadata, quarantine, reference-resolution controls, and core-load SQL;
 - controlled HL7 v2 parsing plus claims CSV validation, raw loading, quarantine, and claim/claim-line modeling;
 - incremental FHIR API client and PostgreSQL checkpoint design;
-- deterministic synthetic FHIR generation, ED-utilization CSV export, and temporal readmission cohort export; and
-- chronological logistic-regression readmission baseline and monthly claims-cost mart; and
+- deterministic synthetic FHIR generation, database-backed dashboard bundle, and temporal readmission cohort export;
+- chronological logistic-regression readmission baseline and monthly clinical/claims analytics marts; and
 - PostgreSQL/Airflow/HAPI configuration and CI test coverage.
 
 The Docker PostgreSQL, Airflow, and HAPI FHIR API workflows have been validated locally; see [validation evidence](docs/validation_evidence.md). OMOP and imaging remain later extensions. See the [runbook](docs/runbook.md) for runnable commands.

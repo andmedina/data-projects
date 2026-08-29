@@ -4,11 +4,12 @@
 
 | Layer | Purpose | Phase 1 examples |
 | --- | --- | --- |
-| Source | Original synthetic clinical source | Synthea FHIR R4 export; optional HAPI API |
-| Raw | Immutable source fidelity and replay | resource JSON, resource type, source ID, load metadata |
-| Staging | Parsed, typed, normalized records | `stg_patient`, `stg_encounter`, `stg_observation` |
-| Core | Canonical clinical relationships | patient, encounter, observation entities |
-| Analytics | Purpose-built, documented queries | ED utilization mart |
+| Source | Original synthetic healthcare source | generated/Synthea FHIR R4, HAPI FHIR API, controlled claims CSV, HL7 v2 |
+| Raw | Immutable source fidelity and replay | FHIR JSON, claim-line payloads, HL7 message text, source and run metadata |
+| Staging | Parsed, typed, normalized records | patient, encounter, observation, condition, procedure, medication, coverage views |
+| Core | Canonical healthcare relationships | clinical entities, claim header/detail, HL7 observations |
+| Analytics | Purpose-built, documented queries | ED activity, clinical activity, and claims-cost marts |
+| Delivery | Reproducible consumer contracts | dashboard CSV bundle, manifest, validation evidence, model report |
 
 ## Reliability controls
 
@@ -18,6 +19,7 @@
 - Natural source IDs and payload hashes enable idempotent loads.
 - Staging selects the most recently updated payload for each resource type and source resource ID when multiple source systems provide the same record.
 - Reconciliation compares source, raw, valid staging, quarantined, core, and mart counts with documented exclusions.
+- Dashboard extracts are rebuilt from PostgreSQL and accompanied by a timestamped row-count manifest.
 
 ## FHIR mapping principles
 

@@ -66,6 +66,17 @@ PYTHONPATH=src python -m healthcare_clinical_intelligence.cli fhir-incremental P
 
 The checkpoint advances only after the full paginated request completes successfully.
 
+## Dashboard export
+
+Apply the latest SQL and export the complete dashboard contract from PostgreSQL:
+
+```bash
+PYTHONPATH=src python -m healthcare_clinical_intelligence.cli db-migrate --dsn "postgresql://healthcare_app:change-me@localhost:55432/healthcare_clinical_intelligence"
+PYTHONPATH=src python -m healthcare_clinical_intelligence.cli dashboard-export --dsn "postgresql://healthcare_app:change-me@localhost:55432/healthcare_clinical_intelligence" --output output/dashboard
+```
+
+Confirm that `data_quality.csv` contains only `pass` statuses and run `tickets/DA-001_ed_utilization/validation.sql` independently before publishing ED visuals. The generated output is intentionally ignored by Git.
+
 ## Optional services
 
 ```bash

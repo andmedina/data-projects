@@ -8,4 +8,5 @@ select date_trunc('month', start_at)::date as reporting_month,
 from core.encounter
 where encounter_class = 'EMER'
   and encounter_status in ('finished', 'completed')
+  and start_at is not null
 group by 1;

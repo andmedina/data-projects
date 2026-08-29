@@ -12,4 +12,9 @@
 | `core.coverage` | one patient coverage record | `coverage_id` |
 | `core.organization` | one source organization | `organization_id` |
 | `core.provider` | one source practitioner | `provider_id` |
+| `core.claim` | one claim header | `claim_id` |
+| `core.claim_line` | one claim service line | `claim_line_id` |
+| `core.hl7_observation` | one OBX result per HL7 message | `hl7_observation_id` |
 | `mart.ed_utilization_monthly` | reporting month | `reporting_month` |
+| `mart.clinical_activity_monthly` | reporting month | `reporting_month` |
+| `mart.claim_cost_monthly` | reporting month | `reporting_month` |

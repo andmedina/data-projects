@@ -61,6 +61,12 @@ A deterministic 250-patient synthetic FHIR Bundle produced 170 temporally valid 
 
 The `mart.claim_cost_monthly` view summarizes monthly claim, line, billed, allowed, paid, and unpaid amounts from the canonical claim-line model.
 
+## Dashboard export and DA-001 reconciliation
+
+After the dashboard data product was added, the full PostgreSQL migration and export were rerun on August 29, 2026. The bundle produced one executive snapshot, 12 ED-activity rows, 12 clinical-activity rows, one claims-cost row, three quality-control rows, and 14 pipeline-run rows. All quality controls passed.
+
+The independent DA-001 validation recomputed the metric directly from `core.encounter`. It returned zero differences from `mart.ed_utilization_monthly`, found 68 qualifying completed emergency encounters across 12 months, and found zero qualifying encounters without a start timestamp. The count differs from the earlier 69-encounter scale test because later synthetic source versions were loaded into the shared development database; the latest-version staging rule intentionally determines the current canonical state.
+
 ## Environment note
 
 The local machine already used `localhost:5432` for another PostgreSQL service. This project therefore uses host port `55432`; container-to-container services continue to use PostgreSQL port `5432`.

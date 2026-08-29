@@ -40,7 +40,7 @@ Projects combine multiple data engineering concepts into realistic, multi-stage 
 
 | Project | Description |
 |----|----|
-| ⭐ [healthcare_clinical_intelligence](./projects/healthcare/healthcare_clinical_intelligence/) | End-to-end synthetic clinical-data platform with FHIR ingestion, PostgreSQL raw-to-core modeling, quality/reconciliation controls, HL7 and claims validation, ED utilization analytics, and a temporally correct readmission-cohort workflow. |
+| ⭐ [healthcare_clinical_intelligence](./projects/healthcare/healthcare_clinical_intelligence/) | End-to-end synthetic healthcare platform with FHIR/HAPI ingestion, PostgreSQL raw-to-mart modeling, Airflow orchestration, quality/reconciliation controls, claims and HL7 paths, dashboard-ready analytics, and a temporal readmission baseline. |
 | [healthcare_claims_etl](./projects/healthcare/healthcare_claims_etl/) | End-to-end healthcare claims ETL pipeline using Python, PostgreSQL, Airflow, and analytics-ready transformations |
 | `healthcare_streaming_pipeline` *(Planned)* | Real-time patient vitals streaming pipeline using Kafka and event-driven processing |
 

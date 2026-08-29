@@ -1,15 +1,37 @@
 # Metric Dictionary
 
-## Emergency department utilization rate
+## Emergency department encounter intensity
 
-**Status:** planned for Phase 1.
+**Status:** implemented and independently reconciled for synthetic Phase 1 data.
 
-**Business question:** Which populations have the highest ED utilization?
+**Business question:** How much completed ED activity occurs monthly, and how concentrated is repeat use among observed ED patients?
 
-**Numerator:** encounters classified as emergency encounters during the reporting period.
+**Numerator:** encounters whose normalized class is `EMER`, whose status is `finished` or `completed`, and whose start timestamp falls within the reporting month.
 
-**Denominator:** distinct eligible patients with active records during the reporting period. The final eligibility rule and FHIR encounter classification mapping will be documented with the mart.
+**Denominator:** distinct patients with at least one qualifying ED encounter in the reporting month.
 
-**Grain:** patient × reporting period, with rollups by facility and demographic attributes where available.
+**Grain:** reporting month.
 
-**Validation:** independently reconcile encounter counts to the core encounter model and verify that the cohort denominator follows the documented eligibility rule.
+**Validation:** `tickets/DA-001_ed_utilization/validation.sql` independently reconciles encounter and distinct-patient counts and checks for missing reporting timestamps.
+
+**Limitation:** This denominator measures observed ED users, not eligible member months, so the ratio must not be labeled a population utilization rate. Facility and demographic segments are deferred until their mappings are present and validated.
+
+## Claim paid amount
+
+**Status:** implemented for the controlled synthetic claims source.
+
+**Definition:** sum of service-line `paid_amount` within the claim service month. Claim header totals must reconcile to service-line totals.
+
+**Grain:** reporting month.
+
+**Limitation:** This is synthetic financial activity, not adjudicated production claims or a measure of total cost of care.
+
+## Clinical activity volume
+
+**Status:** implemented for synthetic FHIR Conditions, Procedures, and MedicationRequests.
+
+**Definition:** count of canonical clinical activity records by their recorded, performed, or authored month.
+
+**Grain:** reporting month.
+
+**Limitation:** Counts describe source-system activity and are not clinical quality, outcome, or prevalence measures.
