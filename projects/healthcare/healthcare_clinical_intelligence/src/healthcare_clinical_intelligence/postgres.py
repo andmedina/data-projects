@@ -13,6 +13,7 @@ from pathlib import Path
 from .fhir import iter_resources, validate_resource
 from .fhir_client import latest_last_updated, paginated_bundles, resource_url
 from .claims import iter_claim_rows, validate_claim_row
+from .hl7 import parse_message
 
 
 @contextmanager
@@ -206,3 +207,55 @@ def run_claims_database_pipeline(connection: Any, input_path: Path, sql_root: Pa
         cursor.execute("select count(*) from quarantine.claim_line")
         quarantined = int(cursor.fetchone()[0])
     return {"ingestion": ingestion, "claims": claims, "claim_lines": claim_lines, "quarantined_claim_lines": quarantined}
+
+
+def load_hl7_file(connection: Any, input_path: Path, source_system: str = "synthetic_hl7") -> dict[str, int | str]:
+    """Persist valid HL7 messages and map OBX results for known core patients."""
+    run_id = str(uuid.uuid4())
+    messages = [part for part in input_path.read_text().strip().split("\n\n") if part.strip()]
+    report: dict[str, int | str] = {"run_id": run_id, "source_messages": len(messages), "loaded": 0, "duplicates": 0, "rejected": 0, "observations_loaded": 0}
+    with connection.cursor() as cursor:
+        cursor.execute(
+            "insert into operational.pipeline_run (run_id, pipeline_name, status, source_description) values (%s,%s,'running',%s)",
+            (run_id, "hl7_raw_ingestion", source_system),
+        )
+        for message in messages:
+            parsed = parse_message(message)
+            control_id = parsed.get("message_control_id")
+            if parsed["errors"]:
+                cursor.execute(
+                    """insert into quarantine.hl7_message
+                    (run_id, source_system, message_control_id, message_text, reason_code, reason_detail)
+                    values (%s,%s,%s,%s,%s,%s) on conflict do nothing""",
+                    (run_id, source_system, control_id, message, parsed["errors"][0], ",".join(parsed["errors"])),
+                )
+                report["rejected"] += 1
+                continue
+            digest = hashlib.sha256(message.encode()).hexdigest()
+            cursor.execute(
+                """insert into raw.hl7_message
+                (source_system, message_control_id, message_type, message_text, payload_sha256, run_id)
+                values (%s,%s,%s,%s,%s,%s)
+                on conflict (payload_sha256) do nothing returning raw_hl7_message_id""",
+                (source_system, control_id, parsed["message_type"], message, digest, run_id),
+            )
+            raw_row = cursor.fetchone()
+            if not raw_row:
+                report["duplicates"] += 1
+                continue
+            raw_id = raw_row[0]
+            report["loaded"] += 1
+            for observation in parsed["observations"]:
+                cursor.execute(
+                    """insert into core.hl7_observation
+                    (patient_id, message_control_id, obx_set_id, value_type, code, value, units, result_status, source_raw_hl7_message_id)
+                    select %s,%s,%s,%s,%s,%s,%s,%s,%s
+                    where exists (select 1 from core.patient where patient_id=%s)
+                    on conflict (message_control_id, obx_set_id) do nothing returning hl7_observation_id""",
+                    (parsed["patient_id"], control_id, observation["set_id"], observation["value_type"], observation["code"], observation["value"], observation["units"], observation["status"], raw_id, parsed["patient_id"]),
+                )
+                if cursor.fetchone():
+                    report["observations_loaded"] += 1
+        cursor.execute("update operational.pipeline_run set status=%s, completed_at=current_timestamp where run_id=%s", ("partial" if report["rejected"] else "succeeded", run_id))
+    connection.commit()
+    return report

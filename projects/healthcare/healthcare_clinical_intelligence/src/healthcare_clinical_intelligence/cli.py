@@ -5,7 +5,7 @@ import json
 from pathlib import Path
 
 from .pipeline import run_claims_file, run_fhir_file, run_hl7_file
-from .postgres import database_quality_report, execute_sql_file, load_claims_csv, load_core_and_report, load_fhir_incremental, load_fhir_payload, open_connection, run_claims_database_pipeline, run_fhir_database_pipeline
+from .postgres import database_quality_report, execute_sql_file, load_claims_csv, load_core_and_report, load_fhir_incremental, load_fhir_payload, load_hl7_file, open_connection, run_claims_database_pipeline, run_fhir_database_pipeline
 from .synthetic import generate_fhir_bundle
 from .analytics import clinical_activity_from_accepted, ed_utilization_from_accepted
 from .ml import export_readmission_cohort
@@ -50,6 +50,10 @@ def main() -> None:
     claims_pipeline.add_argument("--dsn", required=True)
     claims_pipeline.add_argument("--sql-root", type=Path, default=Path("sql"))
     claims_pipeline.add_argument("--source-system", default="synthetic_claims")
+    hl7_postgres = subparsers.add_parser("hl7-postgres", help="Load validated HL7 messages and map OBX observations into PostgreSQL")
+    hl7_postgres.add_argument("input", type=Path)
+    hl7_postgres.add_argument("--dsn", required=True)
+    hl7_postgres.add_argument("--source-system", default="synthetic_hl7")
     incremental = subparsers.add_parser("fhir-incremental", help="Fetch one FHIR resource type from an API using a saved checkpoint")
     incremental.add_argument("resource_type", choices=["Patient", "Encounter", "Observation"])
     incremental.add_argument("--base-url", required=True)
@@ -101,6 +105,9 @@ def main() -> None:
     elif args.command == "claims-pipeline":
         with open_connection(args.dsn) as connection:
             print(json.dumps(run_claims_database_pipeline(connection, args.input, args.sql_root, args.source_system), indent=2))
+    elif args.command == "hl7-postgres":
+        with open_connection(args.dsn) as connection:
+            print(json.dumps(load_hl7_file(connection, args.input, args.source_system), indent=2))
     elif args.command == "fhir-incremental":
         with open_connection(args.dsn) as connection:
             print(json.dumps(load_fhir_incremental(connection, args.base_url, args.resource_type, args.source_system), indent=2))

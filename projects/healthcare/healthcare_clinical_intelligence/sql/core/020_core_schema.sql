@@ -104,3 +104,17 @@ create table if not exists core.claim_line (
     paid_amount numeric(14, 2) not null check (paid_amount >= 0),
     check (paid_amount <= allowed_amount and allowed_amount <= billed_amount)
 );
+
+create table if not exists core.hl7_observation (
+    hl7_observation_id bigint generated always as identity primary key,
+    patient_id text not null references core.patient(patient_id),
+    message_control_id text not null,
+    obx_set_id text not null,
+    value_type text,
+    code text,
+    value text,
+    units text,
+    result_status text,
+    source_raw_hl7_message_id bigint not null references raw.hl7_message(raw_hl7_message_id),
+    unique (message_control_id, obx_set_id)
+);

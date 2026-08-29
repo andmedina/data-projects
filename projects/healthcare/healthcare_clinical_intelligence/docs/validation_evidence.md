@@ -51,6 +51,10 @@ A 20-patient generated Bundle containing 317 resources was processed with zero r
 
 The synthetic claims CSV loaded one valid service line to `raw.claim_line`, then built one canonical claim header and one canonical claim line. Its billed, allowed, and paid amounts were 200.00, 150.00, and 120.00 respectively. A rerun loaded zero new records and identified one duplicate. The new header-to-line reconciliation query returned no discrepancies.
 
+## HL7 v2 result ingestion
+
+The synthetic ORU^R01 fixture loaded one raw HL7 message and mapped its OBX result to `core.hl7_observation` for patient `p-001`. The mapped result retained the message control ID `MSG0002`, LOINC code `8310-5`, value `37.1`, unit `Cel`, and final status `F`. A rerun loaded zero new messages and zero new observations, confirming message-hash and OBX-key idempotency.
+
 ## Environment note
 
 The local machine already used `localhost:5432` for another PostgreSQL service. This project therefore uses host port `55432`; container-to-container services continue to use PostgreSQL port `5432`.

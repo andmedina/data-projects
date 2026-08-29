@@ -13,6 +13,13 @@ def test_adt_message_extracts_patient():
     assert not parsed["errors"]
 
 
+def test_oru_message_extracts_observation():
+    parsed = parse_message(Path("data/samples/oru_r01.hl7").read_text())
+    assert parsed["message_type"] == "ORU^R01"
+    assert parsed["observations"][0]["code"] == "8310-5"
+    assert parsed["observations"][0]["value"] == "37.1"
+
+
 def test_claim_financial_hierarchy_is_validated():
     row = {"claim_id": "c1", "claim_line_id": "l1", "patient_id": "p1", "service_date": "2025-01-01", "billed_amount": "10", "allowed_amount": "11", "paid_amount": "9"}
     assert "INVALID_FINANCIAL_HIERARCHY" in validate_claim_row(row)

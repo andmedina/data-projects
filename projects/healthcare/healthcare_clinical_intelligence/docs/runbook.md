@@ -40,6 +40,7 @@ It returns ingestion counts and core-model quality results. A healthy sample run
 ```bash
 PYTHONPATH=src python -m healthcare_clinical_intelligence.cli hl7-file data/samples/adt_a01.hl7 --output output/hl7
 PYTHONPATH=src python -m healthcare_clinical_intelligence.cli claims-file data/samples/claims.csv --output output/claims
+PYTHONPATH=src python -m healthcare_clinical_intelligence.cli hl7-postgres data/samples/oru_r01.hl7 --dsn "postgresql://healthcare_app:change-me@localhost:55432/healthcare_clinical_intelligence"
 ```
 
 These validate and quarantine controlled synthetic inputs. Their database mappings are next-phase extensions; they do not replace a certified HL7/X12 implementation.
