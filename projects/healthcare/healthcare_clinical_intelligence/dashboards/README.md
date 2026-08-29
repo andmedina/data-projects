@@ -11,3 +11,11 @@ PYTHONPATH=src python -m healthcare_clinical_intelligence.cli ed-utilization out
 Before publishing any visual, validate totals with an independent SQL query and save the validation evidence in the associated DA ticket. Dashboard files and exports containing anything beyond approved synthetic data must not be committed.
 
 The first page should use `reporting_month`, `ed_encounters`, and `patients_with_ed_encounter` from the export. It should display the metric definition, refresh/source timestamp, and validation status alongside the visual.
+
+For a clinical-activity page, generate the companion export:
+
+```bash
+PYTHONPATH=src python -m healthcare_clinical_intelligence.cli clinical-activity output/fhir/accepted.jsonl --output output/clinical_activity_monthly.csv
+```
+
+This page can show monthly condition, procedure, and medication-request volumes. The fields are technical activity measures, not clinical quality measures.

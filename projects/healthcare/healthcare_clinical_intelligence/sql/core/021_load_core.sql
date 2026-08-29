@@ -49,3 +49,55 @@ set patient_id = excluded.patient_id, encounter_id = excluded.encounter_id,
     observation_status = excluded.observation_status, coding_system = excluded.coding_system,
     code = excluded.code, effective_at = excluded.effective_at,
     source_raw_resource_id = excluded.source_raw_resource_id;
+
+insert into core.organization (organization_id, organization_name, organization_type_system, organization_type_code, source_raw_resource_id)
+select organization_id, organization_name, type_system, type_code, raw_resource_id
+from staging.stg_organization
+on conflict (organization_id) do update
+set organization_name = excluded.organization_name, organization_type_system = excluded.organization_type_system,
+    organization_type_code = excluded.organization_type_code, source_raw_resource_id = excluded.source_raw_resource_id;
+
+insert into core.provider (provider_id, provider_name, source_raw_resource_id)
+select provider_id, provider_name, raw_resource_id
+from staging.stg_practitioner
+on conflict (provider_id) do update
+set provider_name = excluded.provider_name, source_raw_resource_id = excluded.source_raw_resource_id;
+
+insert into core.coverage (coverage_id, patient_id, payer_organization_id, coverage_status, source_raw_resource_id)
+select coverage_id, patient_id, payer_organization_id, coverage_status, raw_resource_id
+from staging.stg_coverage
+where patient_id in (select patient_id from core.patient)
+  and (payer_organization_id is null or payer_organization_id in (select organization_id from core.organization))
+on conflict (coverage_id) do update
+set patient_id = excluded.patient_id, payer_organization_id = excluded.payer_organization_id,
+    coverage_status = excluded.coverage_status, source_raw_resource_id = excluded.source_raw_resource_id;
+
+insert into core.condition_occurrence (condition_id, patient_id, encounter_id, clinical_status, coding_system, code, recorded_at, source_raw_resource_id)
+select condition_id, patient_id, encounter_id, clinical_status, coding_system, code, nullif(recorded_at, '')::timestamptz, raw_resource_id
+from staging.stg_condition
+where patient_id in (select patient_id from core.patient)
+  and (encounter_id is null or encounter_id in (select encounter_id from core.encounter))
+on conflict (condition_id) do update
+set patient_id = excluded.patient_id, encounter_id = excluded.encounter_id, clinical_status = excluded.clinical_status,
+    coding_system = excluded.coding_system, code = excluded.code, recorded_at = excluded.recorded_at,
+    source_raw_resource_id = excluded.source_raw_resource_id;
+
+insert into core.procedure_occurrence (procedure_id, patient_id, encounter_id, procedure_status, coding_system, code, performed_at, source_raw_resource_id)
+select procedure_id, patient_id, encounter_id, procedure_status, coding_system, code, nullif(performed_at, '')::timestamptz, raw_resource_id
+from staging.stg_procedure
+where patient_id in (select patient_id from core.patient)
+  and (encounter_id is null or encounter_id in (select encounter_id from core.encounter))
+on conflict (procedure_id) do update
+set patient_id = excluded.patient_id, encounter_id = excluded.encounter_id, procedure_status = excluded.procedure_status,
+    coding_system = excluded.coding_system, code = excluded.code, performed_at = excluded.performed_at,
+    source_raw_resource_id = excluded.source_raw_resource_id;
+
+insert into core.medication_request (medication_request_id, patient_id, encounter_id, medication_status, coding_system, code, authored_at, source_raw_resource_id)
+select medication_request_id, patient_id, encounter_id, medication_status, coding_system, code, nullif(authored_at, '')::timestamptz, raw_resource_id
+from staging.stg_medication_request
+where patient_id in (select patient_id from core.patient)
+  and (encounter_id is null or encounter_id in (select encounter_id from core.encounter))
+on conflict (medication_request_id) do update
+set patient_id = excluded.patient_id, encounter_id = excluded.encounter_id, medication_status = excluded.medication_status,
+    coding_system = excluded.coding_system, code = excluded.code, authored_at = excluded.authored_at,
+    source_raw_resource_id = excluded.source_raw_resource_id;

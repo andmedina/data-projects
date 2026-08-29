@@ -124,6 +124,12 @@ def database_quality_report(connection: Any) -> dict[str, int]:
         "patients": "select count(*) from core.patient",
         "encounters": "select count(*) from core.encounter",
         "observations": "select count(*) from core.observation",
+        "organizations": "select count(*) from core.organization",
+        "providers": "select count(*) from core.provider",
+        "coverages": "select count(*) from core.coverage",
+        "conditions": "select count(*) from core.condition_occurrence",
+        "procedures": "select count(*) from core.procedure_occurrence",
+        "medication_requests": "select count(*) from core.medication_request",
         "orphan_observations": """select count(*) from core.observation o
             left join core.patient p on p.patient_id=o.patient_id where p.patient_id is null""",
         "invalid_encounter_periods": "select count(*) from core.encounter where end_at < start_at",

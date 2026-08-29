@@ -11,6 +11,18 @@ def generate_fhir_bundle(patient_count: int = 25, seed: int = 42) -> dict[str, A
     rng = random.Random(seed)
     resources: list[dict[str, Any]] = []
     start = datetime(2025, 1, 1, tzinfo=timezone.utc)
+    resources.extend([
+        {
+            "resourceType": "Organization", "id": "synthetic-org-001", "name": "Synthetic Community Hospital",
+            "type": [{"coding": [{"system": "http://terminology.hl7.org/CodeSystem/organization-type", "code": "prov"}]}],
+            "meta": {"lastUpdated": start.isoformat().replace("+00:00", "Z")},
+        },
+        {
+            "resourceType": "Practitioner", "id": "synthetic-practitioner-001",
+            "name": [{"given": ["Avery"], "family": "Morgan"}],
+            "meta": {"lastUpdated": start.isoformat().replace("+00:00", "Z")},
+        },
+    ])
     for patient_number in range(1, patient_count + 1):
         patient_id = f"synthetic-p-{patient_number:05d}"
         birth_year = rng.randint(1940, 2010)
@@ -18,6 +30,11 @@ def generate_fhir_bundle(patient_count: int = 25, seed: int = 42) -> dict[str, A
             "resourceType": "Patient", "id": patient_id,
             "gender": rng.choice(["female", "male", "other"]),
             "birthDate": date(birth_year, rng.randint(1, 12), rng.randint(1, 28)).isoformat(),
+            "meta": {"lastUpdated": start.isoformat().replace("+00:00", "Z")},
+        })
+        resources.append({
+            "resourceType": "Coverage", "id": f"synthetic-cov-{patient_number:05d}", "status": "active",
+            "beneficiary": {"reference": f"Patient/{patient_id}"}, "payor": [{"reference": "Organization/synthetic-org-001"}],
             "meta": {"lastUpdated": start.isoformat().replace("+00:00", "Z")},
         })
         for encounter_number in range(rng.randint(1, 4)):
@@ -31,6 +48,30 @@ def generate_fhir_bundle(patient_count: int = 25, seed: int = 42) -> dict[str, A
                 "period": {"start": encounter_start.isoformat().replace("+00:00", "Z"), "end": encounter_end.isoformat().replace("+00:00", "Z")},
                 "meta": {"lastUpdated": encounter_end.isoformat().replace("+00:00", "Z")},
             })
+            resources.extend([
+                {
+                    "resourceType": "Condition", "id": f"synthetic-c-{patient_number:05d}-{encounter_number:02d}",
+                    "subject": {"reference": f"Patient/{patient_id}"}, "encounter": {"reference": f"Encounter/{encounter_id}"},
+                    "clinicalStatus": {"coding": [{"code": "active"}]},
+                    "code": {"coding": [{"system": "http://hl7.org/fhir/sid/icd-10-cm", "code": rng.choice(["I10", "E11.9", "J06.9"])}]},
+                    "recordedDate": encounter_start.isoformat().replace("+00:00", "Z"),
+                    "meta": {"lastUpdated": encounter_end.isoformat().replace("+00:00", "Z")},
+                },
+                {
+                    "resourceType": "Procedure", "id": f"synthetic-pr-{patient_number:05d}-{encounter_number:02d}", "status": "completed",
+                    "subject": {"reference": f"Patient/{patient_id}"}, "encounter": {"reference": f"Encounter/{encounter_id}"},
+                    "code": {"coding": [{"system": "http://www.ama-assn.org/go/cpt", "code": "99213"}]},
+                    "performedDateTime": encounter_start.isoformat().replace("+00:00", "Z"),
+                    "meta": {"lastUpdated": encounter_end.isoformat().replace("+00:00", "Z")},
+                },
+                {
+                    "resourceType": "MedicationRequest", "id": f"synthetic-m-{patient_number:05d}-{encounter_number:02d}", "status": "active",
+                    "subject": {"reference": f"Patient/{patient_id}"}, "encounter": {"reference": f"Encounter/{encounter_id}"},
+                    "medicationCodeableConcept": {"coding": [{"system": "http://www.nlm.nih.gov/research/umls/rxnorm", "code": "860975"}]},
+                    "authoredOn": encounter_start.isoformat().replace("+00:00", "Z"),
+                    "meta": {"lastUpdated": encounter_end.isoformat().replace("+00:00", "Z")},
+                },
+            ])
             resources.append({
                 "resourceType": "Observation", "id": f"synthetic-o-{patient_number:05d}-{encounter_number:02d}",
                 "status": "final", "subject": {"reference": f"Patient/{patient_id}"},

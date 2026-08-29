@@ -43,6 +43,10 @@ An incremental rerun used the saved Patient watermark, loaded zero new records, 
 
 The HAPI and Synthea copies of the same FHIR resource IDs initially exposed a staging upsert conflict. Staging now ranks resource versions by `last_updated_at`, ingestion timestamp, and raw identifier, retaining only the latest version per resource type and source resource ID. After applying that correction, the core load completed successfully with 101 patients, 242 encounters, 242 observations, zero orphan observations, and zero invalid encounter periods.
 
+## Expanded clinical model
+
+A 20-patient generated Bundle containing 317 resources was processed with zero rejections. The file-based clinical-activity export produced 12 monthly rows. The live database load populated 55 Conditions, 55 Procedures, 55 MedicationRequests, 20 Coverage records, one Organization, and one Practitioner; existing relationship and temporal quality checks remained clean.
+
 ## Environment note
 
 The local machine already used `localhost:5432` for another PostgreSQL service. This project therefore uses host port `55432`; container-to-container services continue to use PostgreSQL port `5432`.

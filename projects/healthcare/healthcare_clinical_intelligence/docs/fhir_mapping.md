@@ -5,6 +5,12 @@
 | `Patient` | person receiving care | `id`; available business identifiers | referenced by Encounter and Observation subject |
 | `Encounter` | care interaction | `id`, subject reference, encounter period | references Patient; may reference Organization and Practitioner |
 | `Observation` | measurement or clinical observation | `id`, status, subject reference, effective date/time when present | references Patient and may reference Encounter |
+| `Condition` | patient clinical condition | `id`, subject reference, clinical status, coding | may reference Patient and Encounter |
+| `Procedure` | performed clinical procedure | `id`, subject reference, status, coding | may reference Patient and Encounter |
+| `MedicationRequest` | medication order/request | `id`, subject reference, status, medication coding | may reference Patient and Encounter |
+| `Organization` | provider or payer organization | `id`, name, type when present | referenced by Coverage payor |
+| `Practitioner` | provider identity | `id`, name when present | available for future Encounter/Procedure attribution |
+| `Coverage` | patient coverage relationship | `id`, beneficiary reference, payor reference | references Patient and Organization |
 
 ## Coding extraction
 

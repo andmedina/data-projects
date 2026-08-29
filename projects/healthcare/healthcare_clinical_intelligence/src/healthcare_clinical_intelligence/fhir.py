@@ -5,7 +5,11 @@ from __future__ import annotations
 from collections.abc import Iterable
 from typing import Any
 
-SUPPORTED_RESOURCES = {"Patient", "Encounter", "Observation"}
+SUPPORTED_RESOURCES = {
+    "Patient", "Encounter", "Observation", "Condition", "Procedure",
+    "MedicationRequest", "Practitioner", "Organization", "Coverage",
+}
+PATIENT_SCOPED_RESOURCES = {"Encounter", "Observation", "Condition", "Procedure", "MedicationRequest", "Coverage"}
 
 
 def iter_resources(payload: dict[str, Any]) -> Iterable[dict[str, Any]]:
@@ -45,11 +49,9 @@ def validate_resource(resource: dict[str, Any]) -> list[str]:
         return errors
     if not resource.get("id"):
         errors.append("MISSING_RESOURCE_ID")
-    if resource_type == "Encounter" and not (resource.get("subject") or {}).get("reference"):
-        errors.append("MISSING_ENCOUNTER_SUBJECT")
+    if resource_type in PATIENT_SCOPED_RESOURCES and not (resource.get("subject") or resource.get("beneficiary") or {}).get("reference"):
+        errors.append(f"MISSING_{resource_type.upper()}_SUBJECT")
     if resource_type == "Observation":
-        if not (resource.get("subject") or {}).get("reference"):
-            errors.append("MISSING_OBSERVATION_SUBJECT")
         if not resource.get("status"):
             errors.append("MISSING_OBSERVATION_STATUS")
     return errors
@@ -74,6 +76,27 @@ def normalize_resource(resource: dict[str, Any]) -> dict[str, Any]:
             "encounter_type": first_coding((resource.get("type") or [{}])[0]),
             "start_at": period.get("start"),
             "end_at": period.get("end"),
+        }
+    if resource_type == "Organization":
+        return base | {"name": resource.get("name"), "organization_type": first_coding((resource.get("type") or [{}])[0])}
+    if resource_type == "Practitioner":
+        name = (resource.get("name") or [{}])[0]
+        return base | {"name": " ".join(part for part in [name.get("given", [None])[0], name.get("family")] if part)}
+    if resource_type == "Coverage":
+        return base | {
+            "patient_id": reference_id((resource.get("beneficiary") or {}).get("reference")),
+            "payer_id": reference_id((resource.get("payor") or [{}])[0].get("reference")),
+            "status": resource.get("status"),
+        }
+    if resource_type in {"Condition", "Procedure", "MedicationRequest"}:
+        subject = resource.get("subject") or {}
+        concept = resource.get("code") or resource.get("medicationCodeableConcept")
+        return base | {
+            "patient_id": reference_id(subject.get("reference")),
+            "encounter_id": reference_id((resource.get("encounter") or {}).get("reference")),
+            "status": resource.get("clinicalStatus", {}).get("coding", [{}])[0].get("code") or resource.get("status"),
+            "code": first_coding(concept),
+            "recorded_at": resource.get("recordedDate") or resource.get("performedDateTime") or resource.get("authoredOn"),
         }
     value_keys = [key for key in resource if key.startswith("value")]
     value_key = value_keys[0] if value_keys else None
