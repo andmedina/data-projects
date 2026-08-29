@@ -13,3 +13,5 @@ def test_cohort_uses_only_history_before_prediction(tmp_path: Path):
     rows = build_readmission_cohort(tmp_path / "run" / "accepted.jsonl")
     assert rows
     assert all(row["prior_encounter_count"] >= row["prior_ed_count"] for row in rows)
+    assert any(row["readmitted_within_30_days"] for row in rows)
+    assert any(not row["readmitted_within_30_days"] for row in rows)

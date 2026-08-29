@@ -10,4 +10,7 @@ Use the generated FHIR workflow before exporting the cohort:
 PYTHONPATH=src python -m healthcare_clinical_intelligence.cli generate-synthetic --patients 250 --output data/synthetic/fhir_bundle.json
 PYTHONPATH=src python -m healthcare_clinical_intelligence.cli fhir-file data/synthetic/fhir_bundle.json --output output/generated
 PYTHONPATH=src python -m healthcare_clinical_intelligence.cli readmission-cohort output/generated/accepted.jsonl
+PYTHONPATH=src python -m healthcare_clinical_intelligence.cli train-readmission-baseline output/readmission_cohort.csv
 ```
+
+The baseline uses chronological train/test partitions, prior encounter history, prior ED use, and age at prediction. It reports ROC-AUC and PR-AUC only when both partitions contain both outcome classes.

@@ -54,6 +54,7 @@ Implemented locally:
 - controlled HL7 v2 parsing plus claims CSV validation, raw loading, quarantine, and claim/claim-line modeling;
 - incremental FHIR API client and PostgreSQL checkpoint design;
 - deterministic synthetic FHIR generation, ED-utilization CSV export, and temporal readmission cohort export; and
+- chronological logistic-regression readmission baseline and monthly claims-cost mart; and
 - PostgreSQL/Airflow/HAPI configuration and CI test coverage.
 
 The Docker PostgreSQL, Airflow, and HAPI FHIR API workflows have been validated locally; see [validation evidence](docs/validation_evidence.md). OMOP and imaging remain later extensions. See the [runbook](docs/runbook.md) for runnable commands.

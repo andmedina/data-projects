@@ -37,11 +37,12 @@ def generate_fhir_bundle(patient_count: int = 25, seed: int = 42) -> dict[str, A
             "beneficiary": {"reference": f"Patient/{patient_id}"}, "payor": [{"reference": "Organization/synthetic-org-001"}],
             "meta": {"lastUpdated": start.isoformat().replace("+00:00", "Z")},
         })
+        index_discharge: datetime | None = None
         for encounter_number in range(rng.randint(1, 4)):
             encounter_id = f"synthetic-e-{patient_number:05d}-{encounter_number:02d}"
             encounter_start = start + timedelta(days=rng.randint(0, 364), hours=rng.randint(0, 23))
             encounter_end = encounter_start + timedelta(hours=rng.randint(1, 12))
-            encounter_class = rng.choices(["EMER", "AMB", "IMP"], weights=[25, 60, 15])[0]
+            encounter_class = "IMP" if patient_number % 5 == 0 and encounter_number == 0 else rng.choices(["EMER", "AMB", "IMP"], weights=[25, 60, 15])[0]
             resources.append({
                 "resourceType": "Encounter", "id": encounter_id, "status": "finished",
                 "class": {"code": encounter_class}, "subject": {"reference": f"Patient/{patient_id}"},
@@ -72,6 +73,18 @@ def generate_fhir_bundle(patient_count: int = 25, seed: int = 42) -> dict[str, A
                     "meta": {"lastUpdated": encounter_end.isoformat().replace("+00:00", "Z")},
                 },
             ])
+            if encounter_number == 0 and encounter_class == "IMP":
+                index_discharge = encounter_end
+        if index_discharge and patient_number % 5 == 0:
+            readmit_id = f"synthetic-e-{patient_number:05d}-readmit"
+            readmit_start = index_discharge + timedelta(days=7)
+            readmit_end = readmit_start + timedelta(days=2)
+            resources.append({
+                "resourceType": "Encounter", "id": readmit_id, "status": "finished", "class": {"code": "IMP"},
+                "subject": {"reference": f"Patient/{patient_id}"},
+                "period": {"start": readmit_start.isoformat().replace("+00:00", "Z"), "end": readmit_end.isoformat().replace("+00:00", "Z")},
+                "meta": {"lastUpdated": readmit_end.isoformat().replace("+00:00", "Z")},
+            })
             resources.append({
                 "resourceType": "Observation", "id": f"synthetic-o-{patient_number:05d}-{encounter_number:02d}",
                 "status": "final", "subject": {"reference": f"Patient/{patient_id}"},

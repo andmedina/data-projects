@@ -55,6 +55,12 @@ The synthetic claims CSV loaded one valid service line to `raw.claim_line`, then
 
 The synthetic ORU^R01 fixture loaded one raw HL7 message and mapped its OBX result to `core.hl7_observation` for patient `p-001`. The mapped result retained the message control ID `MSG0002`, LOINC code `8310-5`, value `37.1`, unit `Cel`, and final status `F`. A rerun loaded zero new messages and zero new observations, confirming message-hash and OBX-key idempotency.
 
+## Readmission baseline and claims mart
+
+A deterministic 250-patient synthetic FHIR Bundle produced 170 temporally valid index encounters, including 51 30-day readmission outcomes. A chronological logistic-regression baseline trained on pre-discharge encounter history, prior ED use, and age at prediction. Its holdout set contained 34 rows, with ROC-AUC 0.5889 and PR-AUC 0.3504. These metrics are synthetic-data engineering evidence only and are not clinically meaningful.
+
+The `mart.claim_cost_monthly` view summarizes monthly claim, line, billed, allowed, paid, and unpaid amounts from the canonical claim-line model.
+
 ## Environment note
 
 The local machine already used `localhost:5432` for another PostgreSQL service. This project therefore uses host port `55432`; container-to-container services continue to use PostgreSQL port `5432`.

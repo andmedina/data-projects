@@ -10,6 +10,7 @@ from .synthetic import generate_fhir_bundle
 from .analytics import clinical_activity_from_accepted, ed_utilization_from_accepted
 from .ml import export_readmission_cohort
 from .fhir_client import publish_bundle
+from .modeling import train_readmission_baseline
 
 
 def main() -> None:
@@ -37,6 +38,9 @@ def main() -> None:
     cohort = subparsers.add_parser("readmission-cohort", help="Build a temporally valid synthetic readmission cohort")
     cohort.add_argument("accepted_input", type=Path)
     cohort.add_argument("--output", type=Path, default=Path("output/readmission_cohort.csv"))
+    model = subparsers.add_parser("train-readmission-baseline", help="Train a chronological logistic-regression readmission baseline")
+    model.add_argument("cohort_input", type=Path)
+    model.add_argument("--output", type=Path, default=Path("output/readmission_baseline_report.json"))
     postgres = subparsers.add_parser("fhir-postgres", help="Load a FHIR Bundle JSON file into PostgreSQL raw storage")
     postgres.add_argument("input", type=Path)
     postgres.add_argument("--dsn", required=True, help="PostgreSQL connection string")
@@ -96,6 +100,9 @@ def main() -> None:
     elif args.command == "readmission-cohort":
         rows = export_readmission_cohort(args.accepted_input, args.output)
         print(json.dumps({"output": str(args.output), "rows": len(rows), "outcomes": sum(row["readmitted_within_30_days"] for row in rows)}, indent=2))
+    elif args.command == "train-readmission-baseline":
+        report = train_readmission_baseline(args.cohort_input, args.output)
+        print(json.dumps(report, indent=2))
     elif args.command == "fhir-postgres":
         with open_connection(args.dsn) as connection:
             print(json.dumps(load_fhir_payload(connection, json.loads(args.input.read_text()), args.source_system), indent=2))

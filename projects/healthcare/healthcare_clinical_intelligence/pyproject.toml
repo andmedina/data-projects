@@ -11,6 +11,7 @@ requires-python = ">=3.11"
 [project.optional-dependencies]
 postgres = ["psycopg[binary]>=3.2"]
 test = ["pytest>=8"]
+ml = ["scikit-learn>=1.5"]
 
 [project.scripts]
 hci = "healthcare_clinical_intelligence.cli:main"

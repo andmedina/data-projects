@@ -51,6 +51,8 @@ These validate and quarantine controlled synthetic inputs. Their database mappin
 PYTHONPATH=src python -m healthcare_clinical_intelligence.cli generate-synthetic --patients 250 --seed 42 --output data/synthetic/fhir_bundle.json
 PYTHONPATH=src python -m healthcare_clinical_intelligence.cli fhir-file data/synthetic/fhir_bundle.json --output output/generated
 PYTHONPATH=src python -m healthcare_clinical_intelligence.cli ed-utilization output/generated/accepted.jsonl
+PYTHONPATH=src python -m healthcare_clinical_intelligence.cli readmission-cohort output/generated/accepted.jsonl
+PYTHONPATH=src python -m healthcare_clinical_intelligence.cli train-readmission-baseline output/readmission_cohort.csv
 ```
 
 The generator makes deterministic, clearly synthetic fixtures for development only; Synthea remains the preferred realistic source for portfolio demonstrations.
