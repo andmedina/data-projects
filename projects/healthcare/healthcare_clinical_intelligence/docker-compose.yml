@@ -10,6 +10,11 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
       - ./sql:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 5s
+      retries: 12
 
   hapi-fhir:
     image: hapiproject/hapi:v7.4.0
@@ -18,15 +23,21 @@ services:
       - "8080:8080"
 
   airflow:
-    image: apache/airflow:2.10.4-python3.12
+    build:
+      context: .
+      dockerfile: Dockerfile
     profiles: ["orchestration"]
     command: standalone
     environment:
       AIRFLOW__CORE__LOAD_EXAMPLES: "false"
+      HCI_DATABASE_DSN: postgresql://healthcare_app:change-me@postgres:5432/healthcare_clinical_intelligence
     ports:
       - "8081:8080"
     volumes:
       - ./dags:/opt/airflow/dags:ro
+    depends_on:
+      postgres:
+        condition: service_healthy
 
 volumes:
   postgres_data:

@@ -69,4 +69,4 @@ docker compose --profile fhir-api up hapi-fhir
 docker compose --profile orchestration up airflow
 ```
 
-The Airflow DAG is an orchestration contract until the production extraction and load tasks are implemented.
+The Airflow profile builds the project image, waits for the PostgreSQL health check, and runs the `clinical_fhir_pipeline` DAG with real ingestion, core-load, and quality-report CLI tasks. Open Airflow at `http://localhost:8081`, unpause the DAG, and trigger it manually.

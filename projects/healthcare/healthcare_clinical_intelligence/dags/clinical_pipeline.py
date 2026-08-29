@@ -1,10 +1,10 @@
-"""Airflow integration skeleton; enable with the orchestration Compose profile."""
+"""Runnable Airflow DAG for the synthetic FHIR-to-core workflow."""
 
 from datetime import datetime
 
 try:
     from airflow import DAG
-    from airflow.operators.empty import EmptyOperator
+    from airflow.operators.bash import BashOperator
 
     with DAG(
         dag_id="clinical_fhir_pipeline",
@@ -13,13 +13,26 @@ try:
         catchup=False,
         tags=["healthcare", "fhir"],
     ) as dag:
-        extract = EmptyOperator(task_id="extract_fhir")
-        validate = EmptyOperator(task_id="validate_raw")
-        transform = EmptyOperator(task_id="transform_staging")
-        load = EmptyOperator(task_id="load_core")
-        quality = EmptyOperator(task_id="run_quality_tests")
-        reconcile = EmptyOperator(task_id="reconcile_counts")
-        extract >> validate >> transform >> load >> quality >> reconcile
+        ingest = BashOperator(
+            task_id="ingest_validate_and_quarantine_fhir",
+            bash_command=(
+                "python -m healthcare_clinical_intelligence.cli fhir-postgres "
+                "/opt/hci/data/samples/fhir_bundle.json --source-system synthea "
+                "--dsn \"$HCI_DATABASE_DSN\""
+            ),
+        )
+        core = BashOperator(
+            task_id="transform_and_load_core",
+            bash_command=(
+                "python -m healthcare_clinical_intelligence.cli core-load "
+                "--sql-root /opt/hci/sql --dsn \"$HCI_DATABASE_DSN\""
+            ),
+        )
+        quality = BashOperator(
+            task_id="publish_quality_report",
+            bash_command="python -m healthcare_clinical_intelligence.cli quality-report --dsn \"$HCI_DATABASE_DSN\"",
+        )
+        ingest >> core >> quality
 except ModuleNotFoundError:
     # Allows source inspection and tests without Airflow installed.
     dag = None

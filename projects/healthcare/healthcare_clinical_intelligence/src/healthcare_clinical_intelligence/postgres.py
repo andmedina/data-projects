@@ -142,3 +142,9 @@ def run_fhir_database_pipeline(connection: Any, payload: dict[str, Any], sql_roo
     ingestion = load_fhir_payload(connection, payload, source_system)
     execute_sql_file(connection, sql_root / "core" / "021_load_core.sql")
     return {"ingestion": ingestion, "quality": database_quality_report(connection)}
+
+
+def load_core_and_report(connection: Any, sql_root: Path) -> dict[str, int]:
+    """Run only the idempotent staging-to-core transformation and its quality report."""
+    execute_sql_file(connection, sql_root / "core" / "021_load_core.sql")
+    return database_quality_report(connection)
