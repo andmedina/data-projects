@@ -3,6 +3,9 @@
 | Entity | Grain | Primary identifier |
 | --- | --- | --- |
 | `raw.fhir_resource` | one ingested source payload version | `raw_resource_id` |
+| `operational.quality_check_definition` | one named quality-control policy | `check_name` |
+| `operational.quality_run` | one quality-gate execution | `quality_run_id` |
+| `operational.quality_result` | one check result per quality run | `quality_run_id` + `check_name` |
 | `core.patient` | one source patient | `patient_id` |
 | `core.encounter` | one source encounter | `encounter_id` |
 | `core.observation` | one source observation | `observation_id` |

@@ -20,6 +20,7 @@
 - Staging selects the most recently updated payload for each resource type and source resource ID when multiple source systems provide the same record.
 - Reconciliation compares source, raw, valid staging, quarantined, core, and mart counts with documented exclusions.
 - Dashboard extracts are rebuilt from PostgreSQL and accompanied by a timestamped row-count manifest.
+- Quality definitions, thresholds, gate runs, and individual results persist in the operational schema; critical failures propagate a nonzero process exit to Airflow.
 
 ## FHIR mapping principles
 

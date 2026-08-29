@@ -6,6 +6,7 @@
 - Canonical patient, encounter, observation, condition, procedure, medication, provider, organization, and coverage entities.
 - Controlled claims header/detail and HL7 ORU result paths.
 - Reconciliation, quarantine, quality controls, and idempotent reruns.
+- Persistent threshold-based quality history and an Airflow-blocking critical gate.
 - ED activity, clinical activity, claims-cost marts, and dashboard export contract.
 - Temporally valid readmission cohort and reproducible baseline model.
 

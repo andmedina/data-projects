@@ -45,32 +45,18 @@ EXPORT_QUERIES = {
         order by reporting_month
     """,
     "data_quality": """
-        with controls as (
-            select 1 as display_order, 'orphan_observations' as check_name,
-                   count(*)::bigint as observed_value, 0::bigint as expected_value
-            from core.observation o
-            left join core.patient p on p.patient_id = o.patient_id
-            where p.patient_id is null
-            union all
-            select 2, 'invalid_encounter_periods', count(*)::bigint, 0::bigint
-            from core.encounter where end_at < start_at
-            union all
-            select 3, 'claim_header_line_mismatches', count(*)::bigint, 0::bigint
-            from (
-                select c.claim_id
-                from core.claim c
-                left join core.claim_line cl on cl.claim_id = c.claim_id
-                group by c.claim_id, c.billed_amount, c.allowed_amount, c.paid_amount
-                having count(cl.claim_line_id) = 0
-                    or c.billed_amount <> sum(cl.billed_amount)
-                    or c.allowed_amount <> sum(cl.allowed_amount)
-                    or c.paid_amount <> sum(cl.paid_amount)
-            ) mismatches
+        select qr.quality_run_id::text, qr.check_name, qr.quality_dimension,
+               qr.severity, qr.observed_value, qr.failure_threshold,
+               qr.status, qr.evaluated_at
+        from operational.quality_result qr
+        where qr.quality_run_id = (
+            select quality_run_id
+            from operational.quality_run
+            where completed_at is not null
+            order by completed_at desc
+            limit 1
         )
-        select check_name, observed_value, expected_value,
-               case when observed_value = expected_value then 'pass' else 'fail' end as status
-        from controls
-        order by display_order
+        order by qr.check_name
     """,
     "pipeline_runs": """
         select run_id::text, pipeline_name, source_description, status,

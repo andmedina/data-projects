@@ -67,6 +67,14 @@ After the dashboard data product was added, the full PostgreSQL migration and ex
 
 The independent DA-001 validation recomputed the metric directly from `core.encounter`. It returned zero differences from `mart.ed_utilization_monthly`, found 68 qualifying completed emergency encounters across 12 months, and found zero qualifying encounters without a start timestamp. The count differs from the earlier 69-encounter scale test because later synthetic source versions were loaded into the shared development database; the latest-version staging rule intentionally determines the current canonical state.
 
+## Persistent data-quality gate
+
+DE-005 added eight database-configured checks with durable run and result history. Live normal-mode evaluation persisted eight results: seven passed and the FHIR quarantine-volume control warned because two deliberately malformed fixtures remain retained. All error-severity controls passed, so the overall state was `passed_with_warnings` with zero blocking results.
+
+Strict mode evaluated the same database state with `--fail-on-warning`, persisted a failed gate run, and returned process exit code 1. A subsequent normal run restored the expected non-blocking development state. Independent SQL confirmed that every enabled definition had exactly one result in the latest run, no result had `fail` or `error` status, and no stale run remained `running`.
+
+The finalized Airflow image was rebuilt with `enforce_quality_gate` and immutable policy snapshots. Manual run `de005_policy_snapshot_validation` completed successfully on August 29, 2026: ingestion, core transformation, and the quality gate each reached `success`. The scheduled run created when the DAG was unpaused also completed successfully. The final dashboard refresh read eight rows from the latest persisted quality run and 18 operational pipeline-run rows.
+
 ## Environment note
 
 The local machine already used `localhost:5432` for another PostgreSQL service. This project therefore uses host port `55432`; container-to-container services continue to use PostgreSQL port `5432`.

@@ -1,0 +1,30 @@
+from pathlib import Path
+
+from healthcare_clinical_intelligence.quality import evaluate_quality_status, gate_status
+
+
+def test_quality_status_respects_threshold_and_severity() -> None:
+    assert evaluate_quality_status(0, 0, "error") == "pass"
+    assert evaluate_quality_status(2, 2, "error") == "pass"
+    assert evaluate_quality_status(3, 2, "error") == "fail"
+    assert evaluate_quality_status(1, 0, "warning") == "warn"
+
+
+def test_gate_fails_critical_results_and_optional_strict_warnings() -> None:
+    passing = [{"status": "pass"}]
+    warnings = [{"status": "pass"}, {"status": "warn"}]
+    failures = [{"status": "pass"}, {"status": "fail"}]
+
+    assert gate_status(passing) == "passed"
+    assert gate_status(warnings) == "passed_with_warnings"
+    assert gate_status(warnings, fail_on_warning=True) == "failed"
+    assert gate_status(failures) == "failed"
+    assert gate_status([]) == "failed"
+
+
+def test_airflow_dag_enforces_persistent_quality_gate() -> None:
+    dag_source = Path("dags/clinical_pipeline.py").read_text()
+
+    assert 'task_id="enforce_quality_gate"' in dag_source
+    assert "quality-gate" in dag_source
+    assert "--triggered-by airflow" in dag_source

@@ -5,6 +5,7 @@
 \ir raw/003_incremental_checkpoints.sql
 \ir raw/004_claims_quarantine.sql
 \ir raw/005_hl7_quarantine.sql
+\ir operational/006_quality_framework.sql
 \ir staging/010_staging_views.sql
 \ir core/020_core_schema.sql
 \ir marts/030_ed_utilization.sql

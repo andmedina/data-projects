@@ -10,7 +10,8 @@ Implemented ticket evidence:
 - `DE-002` Incremental, idempotent FHIR loading
 - `DE-003` FHIR reference resolution
 - `DE-004` Source-to-warehouse reconciliation
+- `DE-005` Persistent clinical data-quality controls and Airflow gate
 - `DA-001` Emergency-department activity mart, independent validation, and stakeholder interpretation
 - `DS-001` Temporally valid 30-day readmission baseline
 
-The later DE-005 clinical data-quality framework and DE-006 missing-results investigation remain candidates for deeper operational simulations.
+The later DE-006 missing-results investigation remains a candidate for a deeper operational simulation.

@@ -12,6 +12,7 @@ from .ml import export_readmission_cohort
 from .fhir_client import publish_bundle
 from .modeling import train_readmission_baseline
 from .dashboard import export_dashboard_bundle
+from .quality import run_quality_gate
 
 
 def main() -> None:
@@ -84,6 +85,11 @@ def main() -> None:
     dashboard.add_argument("--dsn", required=True)
     dashboard.add_argument("--output", type=Path, default=Path("output/dashboard"))
     dashboard.add_argument("--model-report", type=Path)
+    quality_gate = subparsers.add_parser("quality-gate", help="Persist quality results and fail on threshold violations")
+    quality_gate.add_argument("--dsn", required=True)
+    quality_gate.add_argument("--pipeline-run-id")
+    quality_gate.add_argument("--triggered-by", default="cli")
+    quality_gate.add_argument("--fail-on-warning", action="store_true")
     args = parser.parse_args()
     if args.command == "fhir-file":
         print(json.dumps(run_fhir_file(args.input, args.output), indent=2))
@@ -142,6 +148,12 @@ def main() -> None:
     elif args.command == "dashboard-export":
         with open_connection(args.dsn) as connection:
             print(json.dumps(export_dashboard_bundle(connection, args.output, args.model_report), indent=2))
+    elif args.command == "quality-gate":
+        with open_connection(args.dsn) as connection:
+            report = run_quality_gate(connection, args.triggered_by, args.pipeline_run_id, args.fail_on_warning)
+        print(json.dumps(report, indent=2))
+        if report["status"] == "failed":
+            raise SystemExit(1)
 
 
 if __name__ == "__main__":

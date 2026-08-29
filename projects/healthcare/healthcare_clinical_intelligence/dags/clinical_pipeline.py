@@ -28,11 +28,14 @@ try:
                 "--sql-root /opt/hci/sql --dsn \"$HCI_DATABASE_DSN\""
             ),
         )
-        quality = BashOperator(
-            task_id="publish_quality_report",
-            bash_command="python -m healthcare_clinical_intelligence.cli quality-report --dsn \"$HCI_DATABASE_DSN\"",
+        quality_gate = BashOperator(
+            task_id="enforce_quality_gate",
+            bash_command=(
+                "python -m healthcare_clinical_intelligence.cli quality-gate "
+                "--triggered-by airflow --dsn \"$HCI_DATABASE_DSN\""
+            ),
         )
-        ingest >> core >> quality
+        ingest >> core >> quality_gate
 except ModuleNotFoundError:
     # Allows source inspection and tests without Airflow installed.
     dag = None

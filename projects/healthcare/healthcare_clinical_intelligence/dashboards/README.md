@@ -17,10 +17,10 @@ The optional model report is validated as JSON and copied into the bundle. `mani
 | `ed_utilization_monthly.csv` | ED activity | reporting month |
 | `clinical_activity_monthly.csv` | Clinical activity | reporting month |
 | `claim_cost_monthly.csv` | Claims cost | reporting month |
-| `data_quality.csv` | Data trust | quality control |
+| `data_quality.csv` | Data trust | latest persisted quality-run control |
 | `pipeline_runs.csv` | Pipeline operations | pipeline run |
 
-Use the metric definitions in `docs/metric_dictionary.md`. Display the data refresh timestamp and validation status on every published page. Do not label ED encounter intensity as a population utilization rate.
+Run `quality-gate` before the export so the data-trust page receives the latest persisted results. Use the metric definitions in `docs/metric_dictionary.md`. Display the data refresh timestamp and validation status on every published page. Do not label ED encounter intensity as a population utilization rate.
 
 ## File-only prototype
 

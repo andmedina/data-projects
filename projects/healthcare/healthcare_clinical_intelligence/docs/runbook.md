@@ -75,7 +75,13 @@ PYTHONPATH=src python -m healthcare_clinical_intelligence.cli db-migrate --dsn "
 PYTHONPATH=src python -m healthcare_clinical_intelligence.cli dashboard-export --dsn "postgresql://healthcare_app:change-me@localhost:55432/healthcare_clinical_intelligence" --output output/dashboard
 ```
 
-Confirm that `data_quality.csv` contains only `pass` statuses and run `tickets/DA-001_ed_utilization/validation.sql` independently before publishing ED visuals. The generated output is intentionally ignored by Git.
+Run the persistent quality gate before exporting:
+
+```bash
+PYTHONPATH=src python -m healthcare_clinical_intelligence.cli quality-gate --dsn "postgresql://healthcare_app:change-me@localhost:55432/healthcare_clinical_intelligence"
+```
+
+Then confirm that `data_quality.csv` contains no `fail` or `error` statuses and run `tickets/DA-001_ed_utilization/validation.sql` independently before publishing ED visuals. Warning rows require documented review. The generated output is intentionally ignored by Git.
 
 ## Optional services
 
@@ -84,6 +90,6 @@ docker compose --profile fhir-api up hapi-fhir
 docker compose --profile orchestration up airflow
 ```
 
-The Airflow profile builds the project image, waits for the PostgreSQL health check, and runs the `clinical_fhir_pipeline` DAG with real ingestion, core-load, and quality-report CLI tasks. Open Airflow at `http://localhost:8081`, unpause the DAG, and trigger it manually.
+The Airflow profile builds the project image, waits for the PostgreSQL health check, and runs the `clinical_fhir_pipeline` DAG with real ingestion, core-load, and persistent quality-gate CLI tasks. Open Airflow at `http://localhost:8081`, unpause the DAG, and trigger it manually. Error-severity threshold violations fail `enforce_quality_gate` and therefore fail the DAG run.
 
 The first time Airflow discovers the DAG it is paused. Run `docker compose --profile orchestration exec -T airflow airflow dags unpause clinical_fhir_pipeline` before triggering it, or unpause it in the Airflow UI.

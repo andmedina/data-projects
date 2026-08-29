@@ -10,4 +10,6 @@
 
 `operational.pipeline_run` + core quality checks + analytics marts → `dashboard-export` → versioned file contract and refresh manifest.
 
+canonical core/claim/quarantine tables → named checks in `quality.py` → `operational.quality_run` + `operational.quality_result` → Airflow gate + dashboard data-trust page.
+
 Every raw row retains source system, resource type, source ID, payload hash, and pipeline run ID. These fields support replay and reconciliation.
