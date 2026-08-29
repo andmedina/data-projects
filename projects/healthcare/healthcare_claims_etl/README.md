@@ -4,6 +4,8 @@
 
 This project is an end-to-end healthcare claims ETL pipeline built with Python, PostgreSQL, Pandas, and SQLAlchemy.
 
+For an interoperability-focused clinical platform covering FHIR, HL7 v2, clinical observations, quality controls, and longitudinal analytics, see the sibling [Healthcare Clinical Intelligence Platform](../healthcare_clinical_intelligence/).
+
 The pipeline generates synthetic healthcare claims data, validates data quality, transforms datasets into analytics-ready formats, and loads the results into a PostgreSQL relational database for downstream analysis.
 
 The project demonstrates core data engineering concepts including:

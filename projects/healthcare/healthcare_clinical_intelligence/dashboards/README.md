@@ -9,3 +9,5 @@ PYTHONPATH=src python -m healthcare_clinical_intelligence.cli ed-utilization out
 ```
 
 Before publishing any visual, validate totals with an independent SQL query and save the validation evidence in the associated DA ticket. Dashboard files and exports containing anything beyond approved synthetic data must not be committed.
+
+The first page should use `reporting_month`, `ed_encounters`, and `patients_with_ed_encounter` from the export. It should display the metric definition, refresh/source timestamp, and validation status alongside the visual.

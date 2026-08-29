@@ -15,7 +15,7 @@ Phase 1 establishes a reproducible clinical/FHIR foundation:
 - data-quality checks; and
 - one initial emergency-department utilization mart.
 
-The HAPI FHIR API is an optional integration path. Claims, HL7 v2, orchestration, dashboards, ML, OMOP, and imaging are deliberately deferred until the foundation is proven.
+The HAPI FHIR API, live PostgreSQL workflow, and Airflow execution are optional integration paths. The repository already includes controlled file-based HL7 v2 and claims validation, dashboard-ready ED exports, and a temporally correct readmission-cohort export. OMOP and imaging remain later extensions.
 
 ## Architecture
 
@@ -48,9 +48,19 @@ See [the architecture](docs/architecture.md), [project charter](docs/project_cha
 
 ## Current status
 
-The local FHIR runner, FHIR validation/quarantine flow, controlled HL7 parser, claims validation rules, PostgreSQL schemas, data-quality queries, and ED-utilization mart are implemented as a reproducible foundation. The first implementation ticket is [DE-001](tickets/DE-001_fhir_patient_encounter_ingestion/ticket.md). See the [runbook](docs/runbook.md) to run it.
+Implemented locally:
 
-Later-domain contracts are included for claims, HL7, Airflow, readmission ML, OMOP, dashboards, and imaging. They are planned extensions—not claims of finished production integrations.
+- FHIR Bundle ingestion with validation, idempotency metadata, quarantine, reference-resolution controls, and core-load SQL;
+- controlled HL7 v2 parsing and claims CSV validation;
+- incremental FHIR API client and PostgreSQL checkpoint design;
+- deterministic synthetic FHIR generation, ED-utilization CSV export, and temporal readmission cohort export; and
+- PostgreSQL/Airflow/HAPI configuration and CI test coverage.
+
+See the [runbook](docs/runbook.md) for runnable commands. Live Docker, HAPI FHIR, PostgreSQL, and Airflow integration remains environment-dependent and is not represented as completed until it is run and validated.
+
+## Portfolio relationship
+
+This project complements the sibling [Healthcare Claims ETL Pipeline](../healthcare_claims_etl/): that project focuses on relational claims ETL, while this platform focuses on clinical interoperability, source fidelity, reconciliation, and longitudinal analytics.
 
 ## Guiding rules
 

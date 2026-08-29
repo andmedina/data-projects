@@ -2,6 +2,8 @@
 
 Tickets capture business context, investigation, solution, validation, and stakeholder communication. They are implementation evidence, not invented incidents. A ticket is marked complete only when its acceptance criteria and prevention controls are demonstrated.
 
+The repository foundation supports DE-001 and DE-002 implementation work. Ticket completion still requires saved run evidence, reconciliation output, and validation against the live database/API environment.
+
 Phase 1 ticket sequence:
 
 - `DE-001` FHIR Patient and Encounter ingestion
