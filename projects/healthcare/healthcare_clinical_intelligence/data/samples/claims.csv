@@ -1,0 +1,2 @@
+claim_id,claim_line_id,patient_id,service_date,billed_amount,allowed_amount,paid_amount
+c-001,c-001-1,p-001,2025-01-03,200.00,150.00,120.00

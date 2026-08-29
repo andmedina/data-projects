@@ -1,0 +1,19 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "healthcare-clinical-intelligence"
+version = "0.1.0"
+description = "Synthetic FHIR clinical data platform and analytics portfolio project"
+requires-python = ">=3.11"
+
+[project.optional-dependencies]
+postgres = ["psycopg[binary]>=3.2"]
+
+[project.scripts]
+hci = "healthcare_clinical_intelligence.cli:main"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["src"]

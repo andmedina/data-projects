@@ -1,0 +1,32 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-healthcare_clinical_intelligence}
+      POSTGRES_USER: ${POSTGRES_USER:-healthcare_app}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-change-me}
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./sql:/docker-entrypoint-initdb.d:ro
+
+  hapi-fhir:
+    image: hapiproject/hapi:v7.4.0
+    profiles: ["fhir-api"]
+    ports:
+      - "8080:8080"
+
+  airflow:
+    image: apache/airflow:2.10.4-python3.12
+    profiles: ["orchestration"]
+    command: standalone
+    environment:
+      AIRFLOW__CORE__LOAD_EXAMPLES: "false"
+    ports:
+      - "8081:8080"
+    volumes:
+      - ./dags:/opt/airflow/dags:ro
+
+volumes:
+  postgres_data:
