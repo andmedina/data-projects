@@ -22,7 +22,7 @@ The mounted SQL directory initializes raw, staging, core, mart, quarantine, and 
 
 ```bash
 python -m pip install -e '.[postgres]'
-PYTHONPATH=src python -m healthcare_clinical_intelligence.cli fhir-postgres data/samples/fhir_bundle.json --dsn "postgresql://healthcare_app:change-me@localhost:5432/healthcare_clinical_intelligence"
+PYTHONPATH=src python -m healthcare_clinical_intelligence.cli fhir-postgres data/samples/fhir_bundle.json --dsn "postgresql://healthcare_app:change-me@localhost:55432/healthcare_clinical_intelligence"
 ```
 
 Then run `sql/core/021_load_core.sql` and `sql/validation/041_reconciliation.sql`. Do not place Synthea exports under version control.
@@ -30,7 +30,7 @@ Then run `sql/core/021_load_core.sql` and `sql/validation/041_reconciliation.sql
 Or run the complete Phase 1 FHIR path with one command after the database is initialized:
 
 ```bash
-PYTHONPATH=src python -m healthcare_clinical_intelligence.cli fhir-pipeline data/samples/fhir_bundle.json --dsn "postgresql://healthcare_app:change-me@localhost:5432/healthcare_clinical_intelligence"
+PYTHONPATH=src python -m healthcare_clinical_intelligence.cli fhir-pipeline data/samples/fhir_bundle.json --dsn "postgresql://healthcare_app:change-me@localhost:55432/healthcare_clinical_intelligence"
 ```
 
 It returns ingestion counts and core-model quality results. A healthy sample run has 1 patient, 1 encounter, 1 observation, zero orphan observations, and one quarantined record.
@@ -57,7 +57,8 @@ The generator makes deterministic, clearly synthetic fixtures for development on
 For an API-backed incremental load after the optional HAPI profile is populated:
 
 ```bash
-PYTHONPATH=src python -m healthcare_clinical_intelligence.cli fhir-incremental Patient --base-url http://localhost:8080/fhir --dsn "postgresql://healthcare_app:change-me@localhost:5432/healthcare_clinical_intelligence"
+PYTHONPATH=src python -m healthcare_clinical_intelligence.cli fhir-publish data/samples/fhir_bundle.json --base-url http://localhost:8080/fhir
+PYTHONPATH=src python -m healthcare_clinical_intelligence.cli fhir-incremental Patient --base-url http://localhost:8080/fhir --dsn "postgresql://healthcare_app:change-me@localhost:55432/healthcare_clinical_intelligence"
 ```
 
 The checkpoint advances only after the full paginated request completes successfully.
@@ -70,3 +71,5 @@ docker compose --profile orchestration up airflow
 ```
 
 The Airflow profile builds the project image, waits for the PostgreSQL health check, and runs the `clinical_fhir_pipeline` DAG with real ingestion, core-load, and quality-report CLI tasks. Open Airflow at `http://localhost:8081`, unpause the DAG, and trigger it manually.
+
+The first time Airflow discovers the DAG it is paused. Run `docker compose --profile orchestration exec -T airflow airflow dags unpause clinical_fhir_pipeline` before triggering it, or unpause it in the Airflow UI.

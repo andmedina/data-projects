@@ -56,7 +56,7 @@ Implemented locally:
 - deterministic synthetic FHIR generation, ED-utilization CSV export, and temporal readmission cohort export; and
 - PostgreSQL/Airflow/HAPI configuration and CI test coverage.
 
-See the [runbook](docs/runbook.md) for runnable commands. Live Docker, HAPI FHIR, PostgreSQL, and Airflow integration remains environment-dependent and is not represented as completed until it is run and validated.
+The Docker PostgreSQL, Airflow, and HAPI FHIR API workflows have been validated locally; see [validation evidence](docs/validation_evidence.md). OMOP and imaging remain later extensions. See the [runbook](docs/runbook.md) for runnable commands.
 
 ## Portfolio relationship
 

@@ -16,6 +16,7 @@
 - Each run has a run ID, timestamps, counts, and outcome status.
 - Validation failures are written to a quarantine table with a reason code; they are never silently dropped.
 - Natural source IDs and payload hashes enable idempotent loads.
+- Staging selects the most recently updated payload for each resource type and source resource ID when multiple source systems provide the same record.
 - Reconciliation compares source, raw, valid staging, quarantined, core, and mart counts with documented exclusions.
 
 ## FHIR mapping principles

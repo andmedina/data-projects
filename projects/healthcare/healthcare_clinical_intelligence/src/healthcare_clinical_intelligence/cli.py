@@ -9,6 +9,7 @@ from .postgres import database_quality_report, execute_sql_file, load_core_and_r
 from .synthetic import generate_fhir_bundle
 from .analytics import ed_utilization_from_accepted
 from .ml import export_readmission_cohort
+from .fhir_client import publish_bundle
 
 
 def main() -> None:
@@ -42,6 +43,9 @@ def main() -> None:
     incremental.add_argument("--base-url", required=True)
     incremental.add_argument("--dsn", required=True)
     incremental.add_argument("--source-system", default="hapi_fhir")
+    publish = subparsers.add_parser("fhir-publish", help="Upsert a synthetic FHIR Bundle to a FHIR REST server")
+    publish.add_argument("input", type=Path)
+    publish.add_argument("--base-url", required=True)
     pipeline = subparsers.add_parser("fhir-pipeline", help="Load FHIR, build core entities, and report quality")
     pipeline.add_argument("input", type=Path)
     pipeline.add_argument("--dsn", required=True)
@@ -79,6 +83,9 @@ def main() -> None:
     elif args.command == "fhir-incremental":
         with open_connection(args.dsn) as connection:
             print(json.dumps(load_fhir_incremental(connection, args.base_url, args.resource_type, args.source_system), indent=2))
+    elif args.command == "fhir-publish":
+        published = publish_bundle(args.base_url, json.loads(args.input.read_text()))
+        print(json.dumps({"base_url": args.base_url, "published": published}, indent=2))
     elif args.command == "fhir-pipeline":
         with open_connection(args.dsn) as connection:
             print(json.dumps(run_fhir_database_pipeline(connection, json.loads(args.input.read_text()), args.sql_root, args.source_system), indent=2))
