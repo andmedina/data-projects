@@ -111,3 +111,12 @@ select source_resource_id as medication_request_id, regexp_replace(payload #>> '
        payload ->> 'status' as medication_status, payload #>> '{medicationCodeableConcept,coding,0,system}' as coding_system,
        payload #>> '{medicationCodeableConcept,coding,0,code}' as code, payload ->> 'authoredOn' as authored_at, raw_resource_id
 from latest_resource where resource_type = 'MedicationRequest' and source_version_rank = 1;
+
+create or replace view staging.stg_claim_line as
+select source_claim_id as claim_id, source_claim_line_id as claim_line_id,
+       payload ->> 'patient_id' as patient_id, (payload ->> 'service_date')::date as service_date,
+       (payload ->> 'billed_amount')::numeric(14,2) as billed_amount,
+       (payload ->> 'allowed_amount')::numeric(14,2) as allowed_amount,
+       (payload ->> 'paid_amount')::numeric(14,2) as paid_amount,
+       raw_claim_line_id
+from raw.claim_line;

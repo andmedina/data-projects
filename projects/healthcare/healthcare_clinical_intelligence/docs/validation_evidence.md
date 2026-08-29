@@ -47,6 +47,10 @@ The HAPI and Synthea copies of the same FHIR resource IDs initially exposed a st
 
 A 20-patient generated Bundle containing 317 resources was processed with zero rejections. The file-based clinical-activity export produced 12 monthly rows. The live database load populated 55 Conditions, 55 Procedures, 55 MedicationRequests, 20 Coverage records, one Organization, and one Practitioner; existing relationship and temporal quality checks remained clean.
 
+## Claims header/detail model
+
+The synthetic claims CSV loaded one valid service line to `raw.claim_line`, then built one canonical claim header and one canonical claim line. Its billed, allowed, and paid amounts were 200.00, 150.00, and 120.00 respectively. A rerun loaded zero new records and identified one duplicate. The new header-to-line reconciliation query returned no discrepancies.
+
 ## Environment note
 
 The local machine already used `localhost:5432` for another PostgreSQL service. This project therefore uses host port `55432`; container-to-container services continue to use PostgreSQL port `5432`.

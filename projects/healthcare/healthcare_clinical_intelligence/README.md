@@ -51,7 +51,7 @@ See [the architecture](docs/architecture.md), [project charter](docs/project_cha
 Implemented locally:
 
 - FHIR Bundle ingestion with validation, idempotency metadata, quarantine, reference-resolution controls, and core-load SQL;
-- controlled HL7 v2 parsing and claims CSV validation;
+- controlled HL7 v2 parsing plus claims CSV validation, raw loading, quarantine, and claim/claim-line modeling;
 - incremental FHIR API client and PostgreSQL checkpoint design;
 - deterministic synthetic FHIR generation, ED-utilization CSV export, and temporal readmission cohort export; and
 - PostgreSQL/Airflow/HAPI configuration and CI test coverage.

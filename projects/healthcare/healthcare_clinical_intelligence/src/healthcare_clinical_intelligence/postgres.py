@@ -12,6 +12,7 @@ from pathlib import Path
 
 from .fhir import iter_resources, validate_resource
 from .fhir_client import latest_last_updated, paginated_bundles, resource_url
+from .claims import iter_claim_rows, validate_claim_row
 
 
 @contextmanager
@@ -154,3 +155,54 @@ def load_core_and_report(connection: Any, sql_root: Path) -> dict[str, int]:
     """Run only the idempotent staging-to-core transformation and its quality report."""
     execute_sql_file(connection, sql_root / "core" / "021_load_core.sql")
     return database_quality_report(connection)
+
+
+def load_claims_csv(connection: Any, input_path: Path, source_system: str = "synthetic_claims") -> dict[str, int | str]:
+    """Load validated claim lines to raw storage and quarantine invalid rows."""
+    run_id = str(uuid.uuid4())
+    report: dict[str, int | str] = {"run_id": run_id, "source_records": 0, "loaded": 0, "duplicates": 0, "rejected": 0}
+    with connection.cursor() as cursor:
+        cursor.execute(
+            "insert into operational.pipeline_run (run_id, pipeline_name, status, source_description) values (%s, %s, 'running', %s)",
+            (run_id, "claims_raw_ingestion", source_system),
+        )
+        for row in iter_claim_rows(input_path):
+            report["source_records"] += 1
+            errors = validate_claim_row(row)
+            if errors:
+                cursor.execute(
+                    """insert into quarantine.claim_line
+                    (run_id, source_system, source_claim_id, source_claim_line_id, payload, reason_code, reason_detail)
+                    values (%s,%s,%s,%s,%s::jsonb,%s,%s) on conflict do nothing""",
+                    (run_id, source_system, row.get("claim_id"), row.get("claim_line_id"), json.dumps(row), errors[0], ",".join(errors)),
+                )
+                report["rejected"] += 1
+                continue
+            digest = hashlib.sha256(json.dumps(row, sort_keys=True).encode()).hexdigest()
+            cursor.execute(
+                """insert into raw.claim_line
+                (source_system, source_claim_id, source_claim_line_id, payload, payload_sha256, run_id)
+                values (%s,%s,%s,%s::jsonb,%s,%s)
+                on conflict (source_system, source_claim_line_id, payload_sha256) do nothing returning raw_claim_line_id""",
+                (source_system, row["claim_id"], row["claim_line_id"], json.dumps(row), digest, run_id),
+            )
+            if cursor.fetchone():
+                report["loaded"] += 1
+            else:
+                report["duplicates"] += 1
+        cursor.execute("update operational.pipeline_run set status=%s, completed_at=current_timestamp where run_id=%s", ("partial" if report["rejected"] else "succeeded", run_id))
+    connection.commit()
+    return report
+
+
+def run_claims_database_pipeline(connection: Any, input_path: Path, sql_root: Path, source_system: str = "synthetic_claims") -> dict[str, Any]:
+    ingestion = load_claims_csv(connection, input_path, source_system)
+    execute_sql_file(connection, sql_root / "core" / "022_load_claims.sql")
+    with connection.cursor() as cursor:
+        cursor.execute("select count(*) from core.claim")
+        claims = int(cursor.fetchone()[0])
+        cursor.execute("select count(*) from core.claim_line")
+        claim_lines = int(cursor.fetchone()[0])
+        cursor.execute("select count(*) from quarantine.claim_line")
+        quarantined = int(cursor.fetchone()[0])
+    return {"ingestion": ingestion, "claims": claims, "claim_lines": claim_lines, "quarantined_claim_lines": quarantined}

@@ -83,3 +83,24 @@ create table if not exists core.medication_request (
     authored_at timestamptz,
     source_raw_resource_id bigint unique references raw.fhir_resource(raw_resource_id)
 );
+
+create table if not exists core.claim (
+    claim_id text primary key,
+    patient_id text not null references core.patient(patient_id),
+    service_date date not null,
+    billed_amount numeric(14, 2) not null check (billed_amount >= 0),
+    allowed_amount numeric(14, 2) not null check (allowed_amount >= 0),
+    paid_amount numeric(14, 2) not null check (paid_amount >= 0),
+    check (paid_amount <= allowed_amount and allowed_amount <= billed_amount)
+);
+
+create table if not exists core.claim_line (
+    claim_line_id text primary key,
+    claim_id text not null references core.claim(claim_id),
+    patient_id text not null references core.patient(patient_id),
+    service_date date not null,
+    billed_amount numeric(14, 2) not null check (billed_amount >= 0),
+    allowed_amount numeric(14, 2) not null check (allowed_amount >= 0),
+    paid_amount numeric(14, 2) not null check (paid_amount >= 0),
+    check (paid_amount <= allowed_amount and allowed_amount <= billed_amount)
+);
