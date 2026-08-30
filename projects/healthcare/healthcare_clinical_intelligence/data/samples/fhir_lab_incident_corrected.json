@@ -1,0 +1,40 @@
+{
+  "resourceType": "Bundle",
+  "type": "collection",
+  "entry": [
+    {
+      "resource": {
+        "resourceType": "Patient",
+        "id": "lab-incident-p-001",
+        "gender": "unknown",
+        "birthDate": "1975-06-15",
+        "meta": {"lastUpdated": "2025-02-01T08:00:00Z"}
+      }
+    },
+    {
+      "resource": {
+        "resourceType": "Encounter",
+        "id": "lab-incident-e-001",
+        "status": "finished",
+        "class": {"code": "AMB"},
+        "subject": {"reference": "Patient/lab-incident-p-001"},
+        "period": {"start": "2025-02-01T08:00:00Z", "end": "2025-02-01T09:00:00Z"},
+        "meta": {"lastUpdated": "2025-02-01T09:00:00Z"}
+      }
+    },
+    {
+      "resource": {
+        "resourceType": "Observation",
+        "id": "lab-incident-o-001",
+        "status": "corrected",
+        "subject": {"reference": "Patient/lab-incident-p-001"},
+        "encounter": {"reference": "Encounter/lab-incident-e-001"},
+        "category": [{"coding": [{"system": "http://terminology.hl7.org/CodeSystem/observation-category", "code": "laboratory"}]}],
+        "code": {"coding": [{"system": "http://loinc.org", "code": "718-7", "display": "Hemoglobin [Mass/volume] in Blood"}]},
+        "effectiveDateTime": "2025-02-01T08:30:00Z",
+        "valueQuantity": {"value": 13.4, "unit": "g/dL", "system": "http://unitsofmeasure.org", "code": "g/dL"},
+        "meta": {"lastUpdated": "2025-02-01T10:00:00Z"}
+      }
+    }
+  ]
+}

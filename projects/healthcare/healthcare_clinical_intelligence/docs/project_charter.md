@@ -6,21 +6,22 @@ Build a portfolio-grade, synthetic healthcare data platform that reflects how a 
 
 ## Users and outcomes
 
-The platform is designed to demonstrate skills relevant to healthcare data engineering, analytics, and data science. Its first business outcome is a trustworthy ED-utilization dataset, not a dashboard-first prototype.
+The platform is designed to demonstrate skills relevant to healthcare data engineering, analytics, and data science. Its initial ED-activity outcome now anchors a broader set of independently validated healthcare data products.
 
-## In scope for Phase 1
+## Current implemented scope
 
-- FHIR R4 `Patient`, `Encounter`, and `Observation` resources
+- FHIR R4 clinical resources with typed Observation/laboratory values
 - Synthea data generation/export and optional HAPI FHIR API retrieval
 - PostgreSQL raw, staging, core, and analytics layers
 - FHIR reference parsing, validation, quarantine, idempotency, and reconciliation
-- ED-utilization mart plus a documented metric definition
+- ED, clinical-activity, claims-cost, and lab-completeness analytics
+- controlled claims and HL7 paths, persistent quality gates, Airflow, dashboard exports, and a temporal ML baseline
 
-## Explicitly out of scope for Phase 1
+## Explicitly out of scope
 
 - real patient data or PHI
-- claims/X12, HL7 v2, Airflow, Power BI deliverables, ML, OMOP, and DICOM
-- clinical decision support or clinical validation
+- production X12/HL7 certification, production Power BI deployment, full OMOP, and DICOM pixel data
+- clinical decision support, clinical interpretation, or clinical validation
 
 ## Success criteria
 
@@ -28,4 +29,4 @@ Another engineer can clone the repository, load synthetic FHIR data, run the pip
 
 ## Decisions
 
-Synthea FHIR exports are the required reproducible input. HAPI FHIR remains an optional service integration so infrastructure does not obscure the data-engineering work. PostgreSQL is the system of record; dbt and Airflow will be introduced only when their operational value is demonstrated.
+Synthea or deterministic synthetic FHIR exports are the required reproducible input. HAPI FHIR remains an optional service integration. PostgreSQL is the analytical system of record, and Airflow enforces the persisted critical quality gate.

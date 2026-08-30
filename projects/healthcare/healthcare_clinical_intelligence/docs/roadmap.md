@@ -7,6 +7,7 @@
 - Controlled claims header/detail and HL7 ORU result paths.
 - Reconciliation, quarantine, quality controls, and idempotent reruns.
 - Persistent threshold-based quality history and an Airflow-blocking critical gate.
+- Typed FHIR laboratory result lineage, completeness mart, and a reproduced missing-result incident with recovery evidence.
 - ED activity, clinical activity, claims-cost marts, and dashboard export contract.
 - Temporally valid readmission cohort and reproducible baseline model.
 

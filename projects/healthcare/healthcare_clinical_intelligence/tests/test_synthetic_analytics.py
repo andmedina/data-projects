@@ -6,8 +6,15 @@ from healthcare_clinical_intelligence.synthetic import generate_fhir_bundle
 
 
 def test_generator_is_deterministic():
-    assert generate_fhir_bundle(3, 7) == generate_fhir_bundle(3, 7)
-    assert len(generate_fhir_bundle(3, 7)["entry"]) >= 9
+    bundle = generate_fhir_bundle(3, 7)
+    assert bundle == generate_fhir_bundle(3, 7)
+    assert len(bundle["entry"]) >= 9
+    lab_observations = [
+        entry["resource"] for entry in bundle["entry"]
+        if entry["resource"]["resourceType"] == "Observation"
+    ]
+    assert lab_observations
+    assert all(observation["category"][0]["coding"][0]["code"] == "laboratory" for observation in lab_observations)
 
 
 def test_ed_export_from_sample_bundle(tmp_path: Path):

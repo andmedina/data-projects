@@ -11,3 +11,4 @@
 \ir marts/030_ed_utilization.sql
 \ir marts/031_claims_cost.sql
 \ir marts/032_clinical_activity.sql
+\ir marts/033_lab_result_completeness.sql

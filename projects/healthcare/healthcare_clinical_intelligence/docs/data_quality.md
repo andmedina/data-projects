@@ -20,8 +20,10 @@ Default error-severity checks enforce:
 - observation-to-patient integrity;
 - encounter temporal validity;
 - completed ED encounter reporting timestamps;
-- claim-line referential integrity; and
-- exact claim header-to-line financial reconciliation.
+- claim-line referential integrity;
+- exact claim header-to-line financial reconciliation;
+- final laboratory result or documented absent-reason completeness; and
+- final laboratory effective-time completeness.
 
 FHIR, claim, and HL7 quarantine volumes are warning-severity checks. This keeps deliberately invalid test fixtures visible without failing a normal development pipeline. Use strict mode for a zero-warning release gate.
 

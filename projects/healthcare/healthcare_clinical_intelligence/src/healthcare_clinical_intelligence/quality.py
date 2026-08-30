@@ -40,6 +40,26 @@ QUALITY_CHECK_QUERIES = {
         left join core.claim c on c.claim_id = cl.claim_id
         where c.claim_id is null
     """,
+    "final_laboratory_observations_missing_result": """
+        select count(*) from core.observation
+        where category_code = 'laboratory'
+          and observation_status in ('final', 'amended', 'corrected')
+          and data_absent_reason_code is null
+          and case value_type
+              when 'Quantity' then value_numeric is null
+              when 'Integer' then value_numeric is null
+              when 'String' then nullif(btrim(value_text), '') is null
+              when 'Boolean' then value_boolean is null
+              when 'CodeableConcept' then value_code is null and nullif(btrim(value_code_display), '') is null
+              else true
+          end
+    """,
+    "final_laboratory_observations_missing_effective_at": """
+        select count(*) from core.observation
+        where category_code = 'laboratory'
+          and observation_status in ('final', 'amended', 'corrected')
+          and effective_at is null
+    """,
     "quarantined_fhir_records": "select count(*) from quarantine.fhir_resource",
     "quarantined_claim_lines": "select count(*) from quarantine.claim_line",
     "quarantined_hl7_messages": "select count(*) from quarantine.hl7_message",

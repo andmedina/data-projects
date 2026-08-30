@@ -43,7 +43,7 @@ PYTHONPATH=src python -m healthcare_clinical_intelligence.cli claims-file data/s
 PYTHONPATH=src python -m healthcare_clinical_intelligence.cli hl7-postgres data/samples/oru_r01.hl7 --dsn "postgresql://healthcare_app:change-me@localhost:55432/healthcare_clinical_intelligence"
 ```
 
-These validate and quarantine controlled synthetic inputs. Their database mappings are next-phase extensions; they do not replace a certified HL7/X12 implementation.
+These validate and quarantine controlled synthetic inputs; claims and ORU results also have canonical PostgreSQL paths. They do not replace certified HL7/X12 implementations.
 
 ## Generate larger synthetic fixtures
 
@@ -82,6 +82,25 @@ PYTHONPATH=src python -m healthcare_clinical_intelligence.cli quality-gate --dsn
 ```
 
 Then confirm that `data_quality.csv` contains no `fail` or `error` statuses and run `tickets/DA-001_ed_utilization/validation.sql` independently before publishing ED visuals. Warning rows require documented review. The generated output is intentionally ignored by Git.
+
+## Reproduce the missing-laboratory-result incident
+
+Run this only with synthetic local data. The first gate is expected to return exit code 1:
+
+```bash
+PYTHONPATH=src python -m healthcare_clinical_intelligence.cli fhir-pipeline data/samples/fhir_lab_incident_missing.json --source-system lab_incident --dsn "postgresql://healthcare_app:change-me@localhost:55432/healthcare_clinical_intelligence"
+PYTHONPATH=src python -m healthcare_clinical_intelligence.cli quality-gate --triggered-by de006_missing_result --dsn "postgresql://healthcare_app:change-me@localhost:55432/healthcare_clinical_intelligence"
+```
+
+Load the later corrected source version and confirm recovery:
+
+```bash
+PYTHONPATH=src python -m healthcare_clinical_intelligence.cli fhir-pipeline data/samples/fhir_lab_incident_corrected.json --source-system lab_incident --dsn "postgresql://healthcare_app:change-me@localhost:55432/healthcare_clinical_intelligence"
+PYTHONPATH=src python -m healthcare_clinical_intelligence.cli quality-gate --triggered-by de006_corrected_result --dsn "postgresql://healthcare_app:change-me@localhost:55432/healthcare_clinical_intelligence"
+psql "postgresql://healthcare_app:change-me@localhost:55432/healthcare_clinical_intelligence" -f tickets/DE-006_missing_laboratory_results/validation.sql
+```
+
+The corrected load should add one Observation payload version and identify the unchanged Patient and Encounter as duplicates. The validation must show two retained raw Observation versions, canonical hemoglobin `13.4 g/dL`, zero unexplained missing lab results, and 100% February 2025 completeness.
 
 ## Optional services
 

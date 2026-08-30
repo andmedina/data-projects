@@ -14,6 +14,7 @@ from .fhir import iter_resources, validate_resource
 from .fhir_client import latest_last_updated, paginated_bundles, resource_url
 from .claims import iter_claim_rows, validate_claim_row
 from .hl7 import parse_message
+from .quality import QUALITY_CHECK_QUERIES
 
 
 @contextmanager
@@ -132,9 +133,10 @@ def database_quality_report(connection: Any) -> dict[str, int]:
         "conditions": "select count(*) from core.condition_occurrence",
         "procedures": "select count(*) from core.procedure_occurrence",
         "medication_requests": "select count(*) from core.medication_request",
-        "orphan_observations": """select count(*) from core.observation o
-            left join core.patient p on p.patient_id=o.patient_id where p.patient_id is null""",
-        "invalid_encounter_periods": "select count(*) from core.encounter where end_at < start_at",
+        "orphan_observations": QUALITY_CHECK_QUERIES["orphan_observations"],
+        "invalid_encounter_periods": QUALITY_CHECK_QUERIES["invalid_encounter_periods"],
+        "final_laboratory_observations_missing_result": QUALITY_CHECK_QUERIES["final_laboratory_observations_missing_result"],
+        "final_laboratory_observations_missing_effective_at": QUALITY_CHECK_QUERIES["final_laboratory_observations_missing_effective_at"],
         "quarantined_fhir_records": "select count(*) from quarantine.fhir_resource",
     }
     result: dict[str, int] = {}

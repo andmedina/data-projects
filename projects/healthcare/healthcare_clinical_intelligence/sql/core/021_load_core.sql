@@ -38,16 +38,29 @@ left join core.encounter e on e.encounter_id = s.encounter_id
 where p.patient_id is null or (s.encounter_id is not null and e.encounter_id is null)
 on conflict do nothing;
 
-insert into core.observation (observation_id, patient_id, encounter_id, observation_status, coding_system, code, effective_at, source_raw_resource_id)
+insert into core.observation
+    (observation_id, patient_id, encounter_id, observation_status, coding_system, code,
+     category_system, category_code, effective_at, value_type, value_numeric, value_text,
+     value_boolean, value_code_system, value_code, value_code_display, unit, unit_system,
+     unit_code, data_absent_reason_code, source_raw_resource_id)
 select observation_id, patient_id, encounter_id, observation_status, coding_system, code,
-       nullif(effective_at, '')::timestamptz, raw_resource_id
+       category_system, category_code, nullif(effective_at, '')::timestamptz, value_type,
+       value_numeric, value_text, value_boolean, value_code_system, value_code,
+       value_code_display, unit, unit_system, unit_code, data_absent_reason_code, raw_resource_id
 from staging.stg_observation
 where patient_id in (select patient_id from core.patient)
   and (encounter_id is null or encounter_id in (select encounter_id from core.encounter))
 on conflict (observation_id) do update
 set patient_id = excluded.patient_id, encounter_id = excluded.encounter_id,
     observation_status = excluded.observation_status, coding_system = excluded.coding_system,
-    code = excluded.code, effective_at = excluded.effective_at,
+    code = excluded.code, category_system = excluded.category_system,
+    category_code = excluded.category_code, effective_at = excluded.effective_at,
+    value_type = excluded.value_type, value_numeric = excluded.value_numeric,
+    value_text = excluded.value_text, value_boolean = excluded.value_boolean,
+    value_code_system = excluded.value_code_system, value_code = excluded.value_code,
+    value_code_display = excluded.value_code_display, unit = excluded.unit,
+    unit_system = excluded.unit_system, unit_code = excluded.unit_code,
+    data_absent_reason_code = excluded.data_absent_reason_code,
     source_raw_resource_id = excluded.source_raw_resource_id;
 
 insert into core.organization (organization_id, organization_name, organization_type_system, organization_type_code, source_raw_resource_id)

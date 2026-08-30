@@ -1,6 +1,6 @@
 # Lineage
 
-`FHIR Observation` → `raw.fhir_resource` → `staging.stg_observation` → `core.observation` → future laboratory/utilization marts.
+`FHIR Observation` → `raw.fhir_resource` → `staging.stg_observation` → typed `core.observation` → `mart.lab_result_completeness_monthly` → dashboard lab/data-trust page.
 
 `FHIR Encounter` → `raw.fhir_resource` → `staging.stg_encounter` → `core.encounter` → `mart.ed_utilization_monthly` → Power BI utilization page.
 

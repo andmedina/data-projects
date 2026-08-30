@@ -1,6 +1,6 @@
 from pathlib import Path
 
-from healthcare_clinical_intelligence.quality import evaluate_quality_status, gate_status
+from healthcare_clinical_intelligence.quality import QUALITY_CHECK_QUERIES, evaluate_quality_status, gate_status
 
 
 def test_quality_status_respects_threshold_and_severity() -> None:
@@ -28,3 +28,8 @@ def test_airflow_dag_enforces_persistent_quality_gate() -> None:
     assert 'task_id="enforce_quality_gate"' in dag_source
     assert "quality-gate" in dag_source
     assert "--triggered-by airflow" in dag_source
+
+
+def test_lab_completeness_controls_are_registered() -> None:
+    assert "final_laboratory_observations_missing_result" in QUALITY_CHECK_QUERIES
+    assert "final_laboratory_observations_missing_effective_at" in QUALITY_CHECK_QUERIES

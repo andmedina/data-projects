@@ -21,3 +21,6 @@
 | `mart.ed_utilization_monthly` | reporting month | `reporting_month` |
 | `mart.clinical_activity_monthly` | reporting month | `reporting_month` |
 | `mart.claim_cost_monthly` | reporting month | `reporting_month` |
+| `mart.lab_result_completeness_monthly` | laboratory result month | `reporting_month` |
+
+`core.observation` retains source category and code, effective time, explicit value type, separate numeric/text/boolean/coded value fields, Quantity unit/system/code, documented absent reason, and the raw source-version key. Typed fields must not be coalesced when validating result completeness.

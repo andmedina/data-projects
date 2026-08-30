@@ -25,9 +25,53 @@ create table if not exists core.observation (
     observation_status text not null,
     coding_system text,
     code text,
+    category_system text,
+    category_code text,
     effective_at timestamptz,
+    value_type text constraint observation_value_type_check check (
+        value_type is null or value_type in ('Quantity', 'String', 'Boolean', 'Integer', 'CodeableConcept')
+    ),
+    value_numeric numeric,
+    value_text text,
+    value_boolean boolean,
+    value_code_system text,
+    value_code text,
+    value_code_display text,
+    unit text,
+    unit_system text,
+    unit_code text,
+    data_absent_reason_code text,
     source_raw_resource_id bigint unique references raw.fhir_resource(raw_resource_id)
 );
+
+-- Backfill-safe additions for existing development databases.
+alter table core.observation add column if not exists category_system text;
+alter table core.observation add column if not exists category_code text;
+alter table core.observation add column if not exists value_type text;
+alter table core.observation add column if not exists value_numeric numeric;
+alter table core.observation add column if not exists value_text text;
+alter table core.observation add column if not exists value_boolean boolean;
+alter table core.observation add column if not exists value_code_system text;
+alter table core.observation add column if not exists value_code text;
+alter table core.observation add column if not exists value_code_display text;
+alter table core.observation add column if not exists unit text;
+alter table core.observation add column if not exists unit_system text;
+alter table core.observation add column if not exists unit_code text;
+alter table core.observation add column if not exists data_absent_reason_code text;
+
+do $$
+begin
+    if not exists (
+        select 1 from pg_constraint
+        where conname = 'observation_value_type_check'
+          and conrelid = 'core.observation'::regclass
+    ) then
+        alter table core.observation
+            add constraint observation_value_type_check check (
+                value_type is null or value_type in ('Quantity', 'String', 'Boolean', 'Integer', 'CodeableConcept')
+            );
+    end if;
+end $$;
 
 create table if not exists core.organization (
     organization_id text primary key,

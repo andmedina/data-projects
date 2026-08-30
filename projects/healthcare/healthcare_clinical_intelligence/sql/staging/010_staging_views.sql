@@ -48,7 +48,33 @@ select source_resource_id as observation_id,
        payload #>> '{code,coding,0,system}' as coding_system,
        payload #>> '{code,coding,0,code}' as code,
        payload ->> 'effectiveDateTime' as effective_at,
-       raw_resource_id
+       raw_resource_id,
+       payload #>> '{category,0,coding,0,system}' as category_system,
+       payload #>> '{category,0,coding,0,code}' as category_code,
+       case
+           when payload ? 'valueQuantity' then 'Quantity'
+           when payload ? 'valueString' then 'String'
+           when payload ? 'valueBoolean' then 'Boolean'
+           when payload ? 'valueInteger' then 'Integer'
+           when payload ? 'valueCodeableConcept' then 'CodeableConcept'
+       end as value_type,
+       case
+           when payload ? 'valueQuantity'
+                and payload #>> '{valueQuantity,value}' ~ '^-?([0-9]+(\.[0-9]*)?|\.[0-9]+)([eE][+-]?[0-9]+)?$'
+               then (payload #>> '{valueQuantity,value}')::numeric
+           when payload ? 'valueInteger'
+                and payload ->> 'valueInteger' ~ '^-?[0-9]+$'
+               then (payload ->> 'valueInteger')::numeric
+       end as value_numeric,
+       payload ->> 'valueString' as value_text,
+       case when payload ? 'valueBoolean' then (payload ->> 'valueBoolean')::boolean end as value_boolean,
+       payload #>> '{valueCodeableConcept,coding,0,system}' as value_code_system,
+       payload #>> '{valueCodeableConcept,coding,0,code}' as value_code,
+       coalesce(payload #>> '{valueCodeableConcept,coding,0,display}', payload #>> '{valueCodeableConcept,text}') as value_code_display,
+       payload #>> '{valueQuantity,unit}' as unit,
+       payload #>> '{valueQuantity,system}' as unit_system,
+       payload #>> '{valueQuantity,code}' as unit_code,
+       payload #>> '{dataAbsentReason,coding,0,code}' as data_absent_reason_code
 from latest_resource
 where resource_type = 'Observation' and source_version_rank = 1;
 

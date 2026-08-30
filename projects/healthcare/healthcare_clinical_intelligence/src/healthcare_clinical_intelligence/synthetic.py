@@ -72,6 +72,19 @@ def generate_fhir_bundle(patient_count: int = 25, seed: int = 42) -> dict[str, A
                     "authoredOn": encounter_start.isoformat().replace("+00:00", "Z"),
                     "meta": {"lastUpdated": encounter_end.isoformat().replace("+00:00", "Z")},
                 },
+                {
+                    "resourceType": "Observation", "id": f"synthetic-o-{patient_number:05d}-{encounter_number:02d}",
+                    "status": "final", "subject": {"reference": f"Patient/{patient_id}"},
+                    "encounter": {"reference": f"Encounter/{encounter_id}"},
+                    "category": [{"coding": [{"system": "http://terminology.hl7.org/CodeSystem/observation-category", "code": "laboratory"}]}],
+                    "code": {"coding": [{"system": "http://loinc.org", "code": "2339-0", "display": "Glucose [Mass/volume] in Blood"}]},
+                    "effectiveDateTime": encounter_start.isoformat().replace("+00:00", "Z"),
+                    "valueQuantity": {
+                        "value": round(rng.uniform(70.0, 180.0), 1), "unit": "mg/dL",
+                        "system": "http://unitsofmeasure.org", "code": "mg/dL",
+                    },
+                    "meta": {"lastUpdated": encounter_end.isoformat().replace("+00:00", "Z")},
+                },
             ])
             if encounter_number == 0 and encounter_class == "IMP":
                 index_discharge = encounter_end
@@ -84,14 +97,5 @@ def generate_fhir_bundle(patient_count: int = 25, seed: int = 42) -> dict[str, A
                 "subject": {"reference": f"Patient/{patient_id}"},
                 "period": {"start": readmit_start.isoformat().replace("+00:00", "Z"), "end": readmit_end.isoformat().replace("+00:00", "Z")},
                 "meta": {"lastUpdated": readmit_end.isoformat().replace("+00:00", "Z")},
-            })
-            resources.append({
-                "resourceType": "Observation", "id": f"synthetic-o-{patient_number:05d}-{encounter_number:02d}",
-                "status": "final", "subject": {"reference": f"Patient/{patient_id}"},
-                "encounter": {"reference": f"Encounter/{encounter_id}"},
-                "code": {"coding": [{"system": "http://loinc.org", "code": "8310-5", "display": "Body temperature"}]},
-                "effectiveDateTime": encounter_start.isoformat().replace("+00:00", "Z"),
-                "valueQuantity": {"value": round(rng.uniform(36.0, 39.5), 1), "unit": "Cel"},
-                "meta": {"lastUpdated": encounter_end.isoformat().replace("+00:00", "Z")},
             })
     return {"resourceType": "Bundle", "type": "collection", "entry": [{"resource": resource} for resource in resources]}

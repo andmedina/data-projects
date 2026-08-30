@@ -8,7 +8,7 @@
 | Raw | Immutable source fidelity and replay | FHIR JSON, claim-line payloads, HL7 message text, source and run metadata |
 | Staging | Parsed, typed, normalized records | patient, encounter, observation, condition, procedure, medication, coverage views |
 | Core | Canonical healthcare relationships | clinical entities, claim header/detail, HL7 observations |
-| Analytics | Purpose-built, documented queries | ED activity, clinical activity, and claims-cost marts |
+| Analytics | Purpose-built, documented queries | ED activity, clinical activity, claims-cost, and lab-completeness marts |
 | Delivery | Reproducible consumer contracts | dashboard CSV bundle, manifest, validation evidence, model report |
 
 ## Reliability controls

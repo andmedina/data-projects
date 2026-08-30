@@ -35,3 +35,19 @@
 **Grain:** reporting month.
 
 **Limitation:** Counts describe source-system activity and are not clinical quality, outcome, or prevalence measures.
+
+## Laboratory result completeness
+
+**Status:** implemented, incident-tested, and independently reconciled for synthetic FHIR data.
+
+**Denominator:** final, amended, or corrected Observations categorized as `laboratory` with an effective timestamp in the reporting month.
+
+**Complete numerator:** denominator records with a usable typed `value[x]` or documented FHIR `dataAbsentReason`.
+
+**Unexplained missing result:** denominator record with neither a usable typed value nor documented absent reason.
+
+**Calculation:** 100 × complete numerator ÷ denominator, at reporting-month grain.
+
+**Validation:** `tickets/DE-006_missing_laboratory_results/validation.sql` reconciles raw versions, the typed canonical value, unexplained nulls, the monthly mart, and pre/post-remediation gate results.
+
+**Limitation:** This measures transport/model completeness, not clinical plausibility, reference-range interpretation, result timeliness, or fitness for patient care.

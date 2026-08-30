@@ -51,6 +51,8 @@ values
     ('completed_ed_encounters_missing_start', 'Completed emergency encounters without a reporting timestamp', 'completeness', 'error', 0),
     ('claim_header_line_mismatches', 'Claim headers that do not reconcile to their service lines', 'reconciliation', 'error', 0),
     ('orphan_claim_lines', 'Canonical claim lines without a canonical claim header', 'integrity', 'error', 0),
+    ('final_laboratory_observations_missing_result', 'Final laboratory observations without a typed result or documented absent reason', 'completeness', 'error', 0),
+    ('final_laboratory_observations_missing_effective_at', 'Final laboratory observations without a reporting timestamp', 'completeness', 'error', 0),
     ('quarantined_fhir_records', 'FHIR records retained in quarantine', 'validity', 'warning', 0),
     ('quarantined_claim_lines', 'Claim lines retained in quarantine', 'validity', 'warning', 0),
     ('quarantined_hl7_messages', 'HL7 messages retained in quarantine', 'validity', 'warning', 0)

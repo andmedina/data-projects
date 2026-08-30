@@ -11,7 +11,8 @@ Implemented ticket evidence:
 - `DE-003` FHIR reference resolution
 - `DE-004` Source-to-warehouse reconciliation
 - `DE-005` Persistent clinical data-quality controls and Airflow gate
+- `DE-006` Missing laboratory-result incident, typed Observation remediation, and prevention controls
 - `DA-001` Emergency-department activity mart, independent validation, and stakeholder interpretation
 - `DS-001` Temporally valid 30-day readmission baseline
 
-The later DE-006 missing-results investigation remains a candidate for a deeper operational simulation.
+Future tickets can extend the same evidence pattern to late-arriving results, reference-range normalization, and source-specific terminology defects.

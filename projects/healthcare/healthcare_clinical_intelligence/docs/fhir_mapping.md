@@ -4,7 +4,7 @@
 | --- | --- | --- | --- |
 | `Patient` | person receiving care | `id`; available business identifiers | referenced by Encounter and Observation subject |
 | `Encounter` | care interaction | `id`, subject reference, encounter period | references Patient; may reference Organization and Practitioner |
-| `Observation` | measurement or clinical observation | `id`, status, subject reference, effective date/time when present | references Patient and may reference Encounter |
+| `Observation` | typed measurement or clinical observation | `id`, status, subject reference, effective date/time when present | references Patient and may reference Encounter; retains category, `value[x]`, units, and absent reason |
 | `Condition` | patient clinical condition | `id`, subject reference, clinical status, coding | may reference Patient and Encounter |
 | `Procedure` | performed clinical procedure | `id`, subject reference, status, coding | may reference Patient and Encounter |
 | `MedicationRequest` | medication order/request | `id`, subject reference, status, medication coding | may reference Patient and Encounter |
@@ -18,7 +18,9 @@ Where a CodeableConcept is present, transformations retain the coding system, co
 
 ## Value handling
 
-Observation value types are explicitly classified. Numeric values, coded values, text values, boolean values, and absent values must not be conflated. Unsupported structures are quarantined with a reason code rather than silently discarded.
+Observation value types are explicitly classified. `valueQuantity` and `valueInteger` populate `value_numeric`; `valueString` populates `value_text`; `valueBoolean` populates `value_boolean`; and `valueCodeableConcept` retains its system, code, and display. Quantity unit, system, and code are stored separately so UCUM identity is not lost. `dataAbsentReason` remains distinct from an unexplained null result.
+
+The first category coding identifies laboratory Observations for completeness monitoring. A final, amended, or corrected laboratory Observation must have a usable typed value or a documented absent reason. Multiple simultaneous FHIR `value[x]` choices and structurally invalid quantities are rejected before loading.
 
 ## Incremental retrieval
 

@@ -10,6 +10,9 @@ SUPPORTED_RESOURCES = {
     "MedicationRequest", "Practitioner", "Organization", "Coverage",
 }
 PATIENT_SCOPED_RESOURCES = {"Encounter", "Observation", "Condition", "Procedure", "MedicationRequest", "Coverage"}
+OBSERVATION_VALUE_KEYS = {
+    "valueQuantity", "valueString", "valueBoolean", "valueInteger", "valueCodeableConcept",
+}
 
 
 def iter_resources(payload: dict[str, Any]) -> Iterable[dict[str, Any]]:
@@ -54,6 +57,21 @@ def validate_resource(resource: dict[str, Any]) -> list[str]:
     if resource_type == "Observation":
         if not resource.get("status"):
             errors.append("MISSING_OBSERVATION_STATUS")
+        unsupported_value_keys = {key for key in resource if key.startswith("value")} - OBSERVATION_VALUE_KEYS
+        if unsupported_value_keys:
+            errors.append("UNSUPPORTED_OBSERVATION_VALUE_TYPE")
+        value_keys = OBSERVATION_VALUE_KEYS.intersection(resource)
+        if len(value_keys) > 1:
+            errors.append("MULTIPLE_OBSERVATION_VALUES")
+        if value_keys and resource.get("dataAbsentReason"):
+            errors.append("OBSERVATION_VALUE_AND_ABSENT_REASON")
+        quantity = resource.get("valueQuantity")
+        if quantity is not None:
+            if not isinstance(quantity, dict):
+                errors.append("INVALID_OBSERVATION_QUANTITY")
+            quantity_value = quantity.get("value") if isinstance(quantity, dict) else None
+            if quantity_value is not None and (isinstance(quantity_value, bool) or not isinstance(quantity_value, (int, float))):
+                errors.append("INVALID_OBSERVATION_QUANTITY_VALUE")
     return errors
 
 
@@ -98,14 +116,25 @@ def normalize_resource(resource: dict[str, Any]) -> dict[str, Any]:
             "code": first_coding(concept),
             "recorded_at": resource.get("recordedDate") or resource.get("performedDateTime") or resource.get("authoredOn"),
         }
-    value_keys = [key for key in resource if key.startswith("value")]
-    value_key = value_keys[0] if value_keys else None
+    value_keys = OBSERVATION_VALUE_KEYS.intersection(resource)
+    value_key = next(iter(value_keys), None)
+    quantity_payload = resource.get("valueQuantity")
+    quantity = quantity_payload if isinstance(quantity_payload, dict) else {}
+    coded_value = first_coding(resource.get("valueCodeableConcept"))
     return base | {
         "patient_id": reference_id((resource.get("subject") or {}).get("reference")),
         "encounter_id": reference_id((resource.get("encounter") or {}).get("reference")),
         "status": resource.get("status"),
         "code": first_coding(resource.get("code")),
+        "category": first_coding((resource.get("category") or [{}])[0]),
         "effective_at": resource.get("effectiveDateTime"),
-        "value_type": value_key,
-        "value": resource.get(value_key) if value_key else None,
+        "value_type": value_key.removeprefix("value") if value_key else None,
+        "value_numeric": quantity.get("value") if value_key == "valueQuantity" else resource.get("valueInteger"),
+        "value_text": resource.get("valueString"),
+        "value_boolean": resource.get("valueBoolean"),
+        "value_code": coded_value if value_key == "valueCodeableConcept" else None,
+        "unit": quantity.get("unit"),
+        "unit_system": quantity.get("system"),
+        "unit_code": quantity.get("code"),
+        "data_absent_reason": first_coding(resource.get("dataAbsentReason")),
     }

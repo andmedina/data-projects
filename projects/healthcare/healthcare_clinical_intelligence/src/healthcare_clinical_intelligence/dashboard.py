@@ -17,6 +17,7 @@ EXPORT_QUERIES = {
             (select count(*) from core.encounter where encounter_class = 'EMER'
                 and encounter_status in ('finished', 'completed')) as ed_encounters,
             (select count(*) from core.observation) as observations,
+            (select count(*) from core.observation where category_code = 'laboratory') as laboratory_observations,
             (select count(*) from core.condition_occurrence) as conditions,
             (select count(*) from core.procedure_occurrence) as procedures,
             (select count(*) from core.medication_request) as medication_requests,
@@ -42,6 +43,13 @@ EXPORT_QUERIES = {
         select reporting_month, claims, claim_lines, billed_amount, allowed_amount,
                paid_amount, unpaid_amount
         from mart.claim_cost_monthly
+        order by reporting_month
+    """,
+    "lab_result_completeness_monthly": """
+        select reporting_month, final_laboratory_observations, observations_with_result,
+               observations_with_absent_reason, observations_missing_result,
+               result_completeness_percent
+        from mart.lab_result_completeness_monthly
         order by reporting_month
     """,
     "data_quality": """

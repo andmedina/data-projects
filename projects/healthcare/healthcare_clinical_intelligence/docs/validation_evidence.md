@@ -75,6 +75,16 @@ Strict mode evaluated the same database state with `--fail-on-warning`, persiste
 
 The finalized Airflow image was rebuilt with `enforce_quality_gate` and immutable policy snapshots. Manual run `de005_policy_snapshot_validation` completed successfully on August 29, 2026: ingestion, core transformation, and the quality gate each reached `success`. The scheduled run created when the DAG was unpaused also completed successfully. The final dashboard refresh read eight rows from the latest persisted quality run and 18 operational pipeline-run rows.
 
+## Missing laboratory-result incident
+
+DE-006 extended canonical FHIR Observations with category, typed values, UCUM unit identity, coded results, and documented absent reasons. The database migration initially exposed PostgreSQL's protection against inserting columns into the middle of an existing view. Preserving the original staging column order and appending the new fields made the migration backward-compatible without dropping the view or stored data.
+
+The missing-result incident Bundle loaded one Patient, one Encounter, and one final laboratory Observation with no value or absent reason. The ten-control quality gate observed one missing lab result, persisted a critical failure, and returned exit code 1. The corrected Bundle retained a second raw Observation version, loaded that one changed payload, and identified the two unchanged resources as duplicates.
+
+Latest-version staging selected the corrected payload and populated LOINC `718-7`, Quantity `13.4`, unit `g/dL`, and UCUM system/code in `core.observation`. The next quality run observed zero missing laboratory results: nine controls passed, one deliberate FHIR-quarantine warning remained, and no result was blocking. Independent SQL found two retained source versions, zero unexplained missing lab rows, and February 2025 mart completeness of 100.00% (one populated result out of one final laboratory Observation).
+
+The final Airflow image was rebuilt from the exact reviewed revision with the typed Observation transformation, supported-value validation, and both new critical checks. Manual run `de006_release_validation` and the scheduled run created on unpause both completed successfully on August 30, 2026. The manual ingestion, core transformation, and `enforce_quality_gate` tasks each reached `success`. The final dashboard bundle contained one lab-completeness row, ten latest quality-result rows, and 27 pipeline-run rows.
+
 ## Environment note
 
 The local machine already used `localhost:5432` for another PostgreSQL service. This project therefore uses host port `55432`; container-to-container services continue to use PostgreSQL port `5432`.
