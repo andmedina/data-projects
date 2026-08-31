@@ -71,10 +71,10 @@ PYTHONPATH=src python -m healthcare_clinical_intelligence.cli generate-synthetic
 PYTHONPATH=src python -m healthcare_clinical_intelligence.cli fhir-file data/synthetic/fhir_bundle.json --output output/generated
 PYTHONPATH=src python -m healthcare_clinical_intelligence.cli ed-utilization output/generated/accepted.jsonl
 PYTHONPATH=src python -m healthcare_clinical_intelligence.cli readmission-cohort output/generated/accepted.jsonl
-PYTHONPATH=src python -m healthcare_clinical_intelligence.cli train-readmission-baseline output/readmission_cohort.csv
+PYTHONPATH=src python -m healthcare_clinical_intelligence.cli train-readmission-baseline output/readmission_cohort.csv --fail-on-governance
 ```
 
-The generator makes deterministic, clearly synthetic fixtures for development only; Synthea remains the preferred realistic source for portfolio demonstrations.
+The generator makes deterministic, clearly synthetic fixtures for development only; Synthea remains the preferred realistic source for portfolio demonstrations. Training writes the report, holdout predictions, model card, and idempotent experiment registry beside the requested output. A governance failure returns exit code 1 when `--fail-on-governance` is present; passing still never grants clinical approval.
 
 For an API-backed incremental load after the optional HAPI profile is populated:
 
@@ -93,6 +93,8 @@ Apply the latest SQL and export the complete dashboard contract from PostgreSQL:
 PYTHONPATH=src python -m healthcare_clinical_intelligence.cli db-migrate --dsn "postgresql://healthcare_app:change-me@localhost:55432/healthcare_clinical_intelligence"
 PYTHONPATH=src python -m healthcare_clinical_intelligence.cli dashboard-export --dsn "postgresql://healthcare_app:change-me@localhost:55432/healthcare_clinical_intelligence" --output output/dashboard
 ```
+
+Pass `--model-report output/readmission_baseline_report.json` to add model governance, calibration, subgroup, and approval-check datasets plus the governed model artifacts to the bundle.
 
 Run the persistent quality gate before exporting:
 

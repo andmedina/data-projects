@@ -15,7 +15,7 @@ The platform is designed to demonstrate skills relevant to healthcare data engin
 - PostgreSQL raw, staging, core, and analytics layers
 - FHIR reference parsing, validation, quarantine, idempotency, and reconciliation
 - ED, clinical-activity, claims-cost, and lab-completeness analytics
-- controlled claims with payer/provider/code/adjustment dimensions, HL7 paths, persistent quality gates, Airflow, dashboard exports, and a temporal ML baseline
+- controlled claims with payer/provider/code/adjustment dimensions, HL7 paths, persistent quality gates, Airflow, dashboard exports, and a governed temporal ML baseline
 
 ## Explicitly out of scope
 

@@ -22,12 +22,18 @@ The optional model report is validated as JSON and copied into the bundle. `mani
 | `hl7_order_current_state.csv` | HL7 operations | order |
 | `data_quality.csv` | Data trust | latest persisted quality-run control |
 | `pipeline_runs.csv` | Pipeline operations | pipeline run |
+| `model_governance.csv` | Model governance | experiment |
+| `model_calibration.csv` | Model governance | populated probability bin |
+| `model_subgroup_performance.csv` | Model governance | reviewed dimension/group |
+| `model_approval_checks.csv` | Model governance | technical approval check |
 
 Run `quality-gate` before the export so the data-trust page receives the latest persisted results. Use the metric definitions in `docs/metric_dictionary.md`. Display the data refresh timestamp and validation status on every published page. Do not label ED encounter intensity as a population utilization rate.
 
 The laboratory page should display final-result volume, populated values, documented absent reasons, unexplained missing results, and completeness percentage together. It must state that completeness is a data-pipeline measure rather than clinical interpretation.
 
 The claims-cost page uses only the current adjudication state: superseded originals and terminal void claims are excluded. Display paid, patient-responsibility, and reason-coded adjustment amounts separately; do not add original and replacement versions together.
+
+When a governed model report is supplied, the model page must display technical approval status, holdout size, patient/date overlap, excluded crossover rows, ROC-AUC, PR-AUC, Brier score, expected calibration error, and every approval check. Subgroup row counts must appear beside subgroup results. The page must always display `clinical_use_approved = false` and the synthetic-only limitation.
 
 ## File-only prototype
 

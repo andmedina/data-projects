@@ -57,7 +57,7 @@ Implemented locally:
 - typed FHIR Observation values/UCUM units plus missing-laboratory-result detection and recovery evidence;
 - incremental FHIR API client and PostgreSQL checkpoint design;
 - deterministic synthetic FHIR generation, database-backed dashboard bundle, and temporal readmission cohort export;
-- chronological logistic-regression readmission baseline and monthly clinical/claims analytics marts; and
+- governed logistic-regression readmission baseline with strict patient/time separation, calibration, subgroup review, experiment registry, model card, and technical approval gate; and
 - PostgreSQL/Airflow/HAPI configuration and CI test coverage.
 
 The Docker PostgreSQL, Airflow, and HAPI FHIR API workflows have been validated locally; see [validation evidence](docs/validation_evidence.md). OMOP and imaging remain later extensions. See the [runbook](docs/runbook.md) for runnable commands.

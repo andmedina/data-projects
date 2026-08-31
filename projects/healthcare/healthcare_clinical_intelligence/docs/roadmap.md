@@ -10,7 +10,7 @@
 - Persistent threshold-based quality history and an Airflow-blocking critical gate.
 - Typed FHIR laboratory result lineage, completeness mart, and a reproduced missing-result incident with recovery evidence.
 - ED activity, clinical activity, claims-cost marts, and dashboard export contract.
-- Temporally valid readmission cohort and reproducible baseline model.
+- Temporally valid readmission cohort, reproducible baseline model, calibration/subgroup evidence, experiment registry, model card, and synthetic-demo approval gate.
 
 ## Next extensions
 
@@ -19,7 +19,7 @@
 | Dashboard client | Build the Power BI file from the stable export contract and apply final visual-design choices |
 | Claims EDI hardening | Add trading-partner-specific X12 837/835 envelopes, acknowledgements, and code-set governance when a synthetic interchange contract is selected |
 | HL7 interface hardening | Add interface-specific profiles, ACK/NACK handling, MLLP transport, escape/repetition rules, and timezone variants |
-| Model governance | Add experiment tracking, calibration monitoring, subgroup review, and approval controls |
+| Model lifecycle hardening | Add external validation, confidence intervals, drift monitoring, accountable reviewers, and retraining/decommission controls when a non-synthetic use case exists |
 | Quality/population health | Add eligibility-aware measures and utilization/risk workflows |
 | OMOP | Map a documented subset to OMOP CDM with vocabulary handling |
 | Imaging | Model ImagingStudy/radiology metadata and DICOM concepts without storing image pixels |

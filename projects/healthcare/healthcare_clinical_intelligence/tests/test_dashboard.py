@@ -59,3 +59,47 @@ def test_dashboard_includes_hl7_current_state_contracts() -> None:
     assert "hl7_encounter_current_state" in EXPORT_QUERIES
     assert "hl7_order_current_state" in EXPORT_QUERIES
     assert "latest_event_at" in EXPORT_QUERIES["hl7_order_current_state"]
+
+
+def test_dashboard_exports_governed_model_datasets_and_artifacts(tmp_path: Path) -> None:
+    report = {
+        "experiment_id": "exp-001",
+        "train_rows": 80,
+        "test_rows": 20,
+        "split": {"patient_overlap_count": 0, "temporal_overlap": False, "excluded_crossover_rows": 2},
+        "roc_auc": 0.7,
+        "pr_auc": 0.4,
+        "calibration": {
+            "brier_score": 0.2,
+            "expected_calibration_error": 0.1,
+            "bins": [{"lower_bound": 0, "upper_bound": 0.2, "rows": 3}],
+        },
+        "subgroup_performance": [{"dimension": "age_group", "group": "under_45", "rows": 10}],
+        "approval": {
+            "status": "approved_for_synthetic_demonstration",
+            "clinical_use_approved": False,
+            "checks": [{"check": "minimum_test_rows", "observed": 20, "threshold": 20, "passed": True}],
+        },
+        "artifacts": {
+            "predictions": "predictions.csv",
+            "model_card": "model_card.md",
+            "experiment_registry": "registry.jsonl",
+        },
+    }
+    report_path = tmp_path / "model_report.json"
+    report_path.write_text(json.dumps(report))
+    (tmp_path / "predictions.csv").write_text("patient_id,prediction\np1,0.2\n")
+    (tmp_path / "model_card.md").write_text("# Model card\n")
+    (tmp_path / "registry.jsonl").write_text('{"experiment_id":"exp-001"}\n')
+
+    manifest = export_dashboard_bundle(FakeConnection(), tmp_path / "dashboard", report_path)
+
+    dataset_names = {dataset["name"] for dataset in manifest["datasets"]}
+    assert {
+        "model_governance",
+        "model_calibration",
+        "model_subgroup_performance",
+        "model_approval_checks",
+    } <= dataset_names
+    assert len(manifest["model_artifacts"]) == 3
+    assert (tmp_path / "dashboard" / "model_governance.csv").exists()

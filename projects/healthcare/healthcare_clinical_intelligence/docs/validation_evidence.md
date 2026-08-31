@@ -75,6 +75,14 @@ The expanded quality gate evaluated 16 controls: 15 passed, the deliberate FHIR 
 
 A deterministic 250-patient synthetic FHIR Bundle produced 170 temporally valid index encounters, including 51 30-day readmission outcomes. A chronological logistic-regression baseline trained on pre-discharge encounter history, prior ED use, and age at prediction. Its holdout set contained 34 rows, with ROC-AUC 0.5889 and PR-AUC 0.3504. These metrics are synthetic-data engineering evidence only and are not clinically meaningful.
 
+## Governed readmission baseline
+
+On August 31, 2026, the governed workflow regenerated 3,932 accepted FHIR resources for 250 synthetic patients and produced 182 inpatient index rows with 55 outcomes. A strict patient-level temporal cutoff assigned 125 rows/77 patients to training and 23 rows/17 patients to holdout, with zero shared patients and no date overlap. Thirteen crossover patients (34 rows, 18.68% of the cohort) were explicitly excluded rather than leaked across the cutoff.
+
+The holdout contained six outcomes. ROC-AUC was 0.7255, PR-AUC 0.5165, precision 0.6000, recall 0.5000, specificity 0.8824, Brier score 0.1943, and expected calibration error 0.1312. Five age/prior-ED subgroup rows were reviewed; the worst sufficiently sized subgroup Brier score was 0.3170. All nine technical checks passed, producing `approved_for_synthetic_demonstration` while retaining `clinical_use_approved: false`.
+
+Rerunning the same cohort/configuration reproduced the experiment identifier and did not duplicate its registry entry. The dashboard bundle added one governance row, four populated calibration bins, five subgroup rows, nine approval checks, holdout predictions, the model card, and the experiment registry.
+
 The `mart.claim_cost_monthly` view summarizes monthly claim, line, billed, allowed, paid, and unpaid amounts from the canonical claim-line model.
 
 ## Dashboard export and DA-001 reconciliation

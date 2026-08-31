@@ -16,5 +16,6 @@ Implemented ticket evidence:
 - `DE-008` HL7 ADT lifecycle, ORM order persistence, current-state marts, and reconciliation controls
 - `DA-001` Emergency-department activity mart, independent validation, and stakeholder interpretation
 - `DS-001` Temporally valid 30-day readmission baseline
+- `DS-002` Patient/time-safe readmission evaluation, experiment tracking, calibration, subgroup review, and approval controls
 
 Future tickets can extend the same evidence pattern to late-arriving results, reference-range normalization, and source-specific terminology defects.

@@ -6,6 +6,7 @@ import csv
 import json
 from datetime import datetime, timezone
 from pathlib import Path
+import shutil
 from typing import Any
 
 
@@ -122,6 +123,48 @@ def _export_query(connection: Any, query: str, output_path: Path) -> int:
     return len(rows)
 
 
+def _write_dict_dataset(output_path: Path, rows: list[dict[str, Any]]) -> int:
+    if not rows:
+        return 0
+    with output_path.open("w", newline="") as handle:
+        writer = csv.DictWriter(handle, fieldnames=list(rows[0]))
+        writer.writeheader()
+        writer.writerows(rows)
+    return len(rows)
+
+
+def _export_model_governance(report: dict[str, Any], output_dir: Path) -> list[dict[str, Any]]:
+    if not {"experiment_id", "approval", "calibration", "subgroup_performance"} <= report.keys():
+        return []
+    datasets = {
+        "model_governance": [
+            {
+                "experiment_id": report["experiment_id"],
+                "approval_status": report["approval"]["status"],
+                "clinical_use_approved": report["approval"]["clinical_use_approved"],
+                "train_rows": report["train_rows"],
+                "test_rows": report["test_rows"],
+                "patient_overlap_count": report["split"]["patient_overlap_count"],
+                "temporal_overlap": report["split"].get("temporal_overlap"),
+                "excluded_crossover_rows": report["split"].get("excluded_crossover_rows", 0),
+                "roc_auc": report["roc_auc"],
+                "pr_auc": report["pr_auc"],
+                "brier_score": report["calibration"]["brier_score"],
+                "expected_calibration_error": report["calibration"]["expected_calibration_error"],
+            }
+        ],
+        "model_calibration": report["calibration"]["bins"],
+        "model_subgroup_performance": report["subgroup_performance"],
+        "model_approval_checks": report["approval"]["checks"],
+    }
+    exported = []
+    for name, rows in datasets.items():
+        output_path = output_dir / f"{name}.csv"
+        row_count = _write_dict_dataset(output_path, rows)
+        exported.append({"name": name, "file": output_path.name, "rows": row_count})
+    return exported
+
+
 def export_dashboard_bundle(
     connection: Any,
     output_dir: Path,
@@ -145,6 +188,20 @@ def export_dashboard_bundle(
         copied_report = output_dir / "readmission_baseline_report.json"
         copied_report.write_text(json.dumps(report, indent=2, sort_keys=True) + "\n")
         manifest["model_report"] = copied_report.name
+        manifest["datasets"].extend(_export_model_governance(report, output_dir))
+        copied_artifacts = []
+        for artifact_type in ("predictions", "model_card", "experiment_registry"):
+            artifact_name = report.get("artifacts", {}).get(artifact_type)
+            if not artifact_name:
+                continue
+            source_path = model_report_path.parent / Path(artifact_name).name
+            if source_path.exists():
+                destination = output_dir / source_path.name
+                if source_path.resolve() != destination.resolve():
+                    shutil.copyfile(source_path, destination)
+                copied_artifacts.append({"type": artifact_type, "file": destination.name})
+        if copied_artifacts:
+            manifest["model_artifacts"] = copied_artifacts
 
     manifest_path = output_dir / "manifest.json"
     manifest_path.write_text(json.dumps(manifest, indent=2) + "\n")

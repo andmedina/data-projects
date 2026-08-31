@@ -9,7 +9,7 @@
 | Staging | Parsed, typed, normalized records | patient, encounter, observation, condition, procedure, medication, coverage, latest claims-line views |
 | Core | Canonical healthcare relationships | clinical entities, claim header/detail and dimensions, HL7 encounter/order/result events |
 | Analytics | Purpose-built, documented queries | ED activity, clinical activity, claims-cost, lab-completeness, and HL7 current-state marts |
-| Delivery | Reproducible consumer contracts | dashboard CSV bundle, manifest, validation evidence, model report |
+| Delivery | Reproducible consumer contracts | dashboard CSV bundle, manifest, validation evidence, governed model artifacts |
 
 ## Reliability controls
 
@@ -23,6 +23,7 @@
 - Reconciliation compares source, raw, valid staging, quarantined, core, and mart counts with documented exclusions.
 - Dashboard extracts are rebuilt from PostgreSQL and accompanied by a timestamped row-count manifest.
 - Quality definitions, thresholds, gate runs, and individual results persist in the operational schema; critical failures propagate a nonzero process exit to Airflow.
+- Model runs retain deterministic experiment identity, holdout predictions, calibration/subgroup evidence, an idempotent registry, a model card, and a non-clinical technical approval result.
 
 ## FHIR mapping principles
 

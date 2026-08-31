@@ -43,6 +43,11 @@ def main() -> None:
     model = subparsers.add_parser("train-readmission-baseline", help="Train a chronological logistic-regression readmission baseline")
     model.add_argument("cohort_input", type=Path)
     model.add_argument("--output", type=Path, default=Path("output/readmission_baseline_report.json"))
+    model.add_argument(
+        "--fail-on-governance",
+        action="store_true",
+        help="Return exit code 1 unless the model passes synthetic-demo approval policy",
+    )
     postgres = subparsers.add_parser("fhir-postgres", help="Load a FHIR Bundle JSON file into PostgreSQL raw storage")
     postgres.add_argument("input", type=Path)
     postgres.add_argument("--dsn", required=True, help="PostgreSQL connection string")
@@ -117,6 +122,8 @@ def main() -> None:
     elif args.command == "train-readmission-baseline":
         report = train_readmission_baseline(args.cohort_input, args.output)
         print(json.dumps(report, indent=2))
+        if args.fail_on_governance and report["approval"]["status"] != "approved_for_synthetic_demonstration":
+            raise SystemExit(1)
     elif args.command == "fhir-postgres":
         with open_connection(args.dsn) as connection:
             print(json.dumps(load_fhir_payload(connection, json.loads(args.input.read_text()), args.source_system), indent=2))
