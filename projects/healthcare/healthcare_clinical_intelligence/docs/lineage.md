@@ -6,7 +6,7 @@
 
 `FHIR Condition / Procedure / MedicationRequest` → `raw.fhir_resource` → typed staging views → canonical core entities → `mart.clinical_activity_monthly` → Power BI clinical-activity page.
 
-`Claims CSV line` → `raw.claim_line` → `core.claim_line` + `core.claim` → `mart.claim_cost_monthly` → Power BI claims-cost page.
+`Claims CSV line` → versioned `raw.claim_line` → latest `staging.stg_claim_line` → payer/provider dimensions + claim/header detail + diagnosis/procedure/adjustment children → `mart.claim_cost_monthly` → Power BI claims-cost page.
 
 `operational.pipeline_run` + core quality checks + analytics marts → `dashboard-export` → versioned file contract and refresh manifest.
 

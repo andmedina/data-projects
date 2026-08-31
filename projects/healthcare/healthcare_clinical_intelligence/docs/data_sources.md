@@ -10,6 +10,10 @@ Generated bulk files belong in `data/synthetic/`, which is ignored by Git. Only 
 
 HAPI FHIR is used only to demonstrate REST retrieval, pagination, and incremental query behavior after file-based loading works. It is not a required dependency for initial development.
 
+## Controlled interoperability fixtures
+
+Small hand-authored HL7 v2 and claims CSV files exercise non-FHIR integration paths. `claims_expanded.csv` contains invented payer/provider identifiers, ordered diagnosis/procedure codes, adjustments, and original/replacement lineage. These fixtures demonstrate the repository's normalized contracts; they are not copied from real transactions and are not certified X12/HL7 implementations.
+
 ## Data handling policy
 
 No real patient data, PHI, clinical exports, or access credentials may be added to this repository.

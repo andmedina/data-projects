@@ -2,7 +2,7 @@
 
 Tickets capture business context, investigation, solution, validation, and stakeholder communication. They are implementation evidence, not invented incidents. A ticket is marked complete only when its acceptance criteria and prevention controls are demonstrated.
 
-The repository foundation supports DE-001 and DE-002 implementation work. Ticket completion still requires saved run evidence, reconciliation output, and validation against the live database/API environment.
+Completed tickets include saved implementation evidence, reconciliation output, and validation against the applicable live database/API environment.
 
 Implemented ticket evidence:
 
@@ -12,6 +12,7 @@ Implemented ticket evidence:
 - `DE-004` Source-to-warehouse reconciliation
 - `DE-005` Persistent clinical data-quality controls and Airflow gate
 - `DE-006` Missing laboratory-result incident, typed Observation remediation, and prevention controls
+- `DE-007` Claims payer/provider/code dimensions, adjustment lineage, and current-adjudication reporting
 - `DA-001` Emergency-department activity mart, independent validation, and stakeholder interpretation
 - `DS-001` Temporally valid 30-day readmission baseline
 

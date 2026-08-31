@@ -12,7 +12,7 @@ from pathlib import Path
 
 from .fhir import iter_resources, validate_resource
 from .fhir_client import latest_last_updated, paginated_bundles, resource_url
-from .claims import iter_claim_rows, validate_claim_row
+from .claims import iter_validated_claim_rows
 from .hl7 import parse_message
 from .quality import QUALITY_CHECK_QUERIES
 
@@ -169,9 +169,8 @@ def load_claims_csv(connection: Any, input_path: Path, source_system: str = "syn
             "insert into operational.pipeline_run (run_id, pipeline_name, status, source_description) values (%s, %s, 'running', %s)",
             (run_id, "claims_raw_ingestion", source_system),
         )
-        for row in iter_claim_rows(input_path):
+        for row, errors in iter_validated_claim_rows(input_path):
             report["source_records"] += 1
-            errors = validate_claim_row(row)
             if errors:
                 cursor.execute(
                     """insert into quarantine.claim_line
@@ -201,14 +200,29 @@ def load_claims_csv(connection: Any, input_path: Path, source_system: str = "syn
 def run_claims_database_pipeline(connection: Any, input_path: Path, sql_root: Path, source_system: str = "synthetic_claims") -> dict[str, Any]:
     ingestion = load_claims_csv(connection, input_path, source_system)
     execute_sql_file(connection, sql_root / "core" / "022_load_claims.sql")
+    entity_queries = {
+        "claims": "select count(*) from core.claim",
+        "claim_lines": "select count(*) from core.claim_line",
+        "payers": "select count(*) from core.payer",
+        "claim_providers": """
+            select count(*) from (
+                select billing_provider_id as provider_id from core.claim
+                union
+                select rendering_provider_id from core.claim_line
+            ) provider
+            where provider_id is not null
+        """,
+        "claim_diagnoses": "select count(*) from core.claim_diagnosis",
+        "claim_line_procedures": "select count(*) from core.claim_line_procedure",
+        "claim_line_adjustments": "select count(*) from core.claim_line_adjustment",
+        "quarantined_claim_lines": "select count(*) from quarantine.claim_line",
+    }
+    report: dict[str, Any] = {"ingestion": ingestion}
     with connection.cursor() as cursor:
-        cursor.execute("select count(*) from core.claim")
-        claims = int(cursor.fetchone()[0])
-        cursor.execute("select count(*) from core.claim_line")
-        claim_lines = int(cursor.fetchone()[0])
-        cursor.execute("select count(*) from quarantine.claim_line")
-        quarantined = int(cursor.fetchone()[0])
-    return {"ingestion": ingestion, "claims": claims, "claim_lines": claim_lines, "quarantined_claim_lines": quarantined}
+        for entity, query in entity_queries.items():
+            cursor.execute(query)
+            report[entity] = int(cursor.fetchone()[0])
+    return report
 
 
 def load_hl7_file(connection: Any, input_path: Path, source_system: str = "synthetic_hl7") -> dict[str, int | str]:

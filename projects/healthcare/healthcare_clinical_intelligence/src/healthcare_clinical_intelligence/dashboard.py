@@ -21,8 +21,18 @@ EXPORT_QUERIES = {
             (select count(*) from core.condition_occurrence) as conditions,
             (select count(*) from core.procedure_occurrence) as procedures,
             (select count(*) from core.medication_request) as medication_requests,
-            (select count(*) from core.claim) as claims,
-            (select coalesce(sum(paid_amount), 0) from core.claim) as total_paid_amount,
+            (select count(*) from core.claim claim
+                where claim.claim_frequency_code <> '8'
+                  and not exists (
+                      select 1 from core.claim successor
+                      where successor.original_claim_id = claim.claim_id
+                  )) as claims,
+            (select coalesce(sum(claim.paid_amount), 0) from core.claim claim
+                where claim.claim_frequency_code <> '8'
+                  and not exists (
+                      select 1 from core.claim successor
+                      where successor.original_claim_id = claim.claim_id
+                  )) as total_paid_amount,
             ((select count(*) from quarantine.fhir_resource)
                 + (select count(*) from quarantine.claim_line)
                 + (select count(*) from quarantine.hl7_message)) as quarantined_records
@@ -41,7 +51,8 @@ EXPORT_QUERIES = {
     """,
     "claim_cost_monthly": """
         select reporting_month, claims, claim_lines, billed_amount, allowed_amount,
-               paid_amount, unpaid_amount
+               paid_amount, unpaid_amount, patient_responsibility_amount,
+               adjustment_amount
         from mart.claim_cost_monthly
         order by reporting_month
     """,

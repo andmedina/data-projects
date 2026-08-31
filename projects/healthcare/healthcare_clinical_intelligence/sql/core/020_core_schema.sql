@@ -84,7 +84,18 @@ create table if not exists core.organization (
 create table if not exists core.provider (
     provider_id text primary key,
     provider_name text,
+    npi text,
+    source_system text,
     source_raw_resource_id bigint unique references raw.fhir_resource(raw_resource_id)
+);
+
+alter table core.provider add column if not exists npi text;
+alter table core.provider add column if not exists source_system text;
+
+create table if not exists core.payer (
+    payer_id text primary key,
+    payer_name text,
+    source_system text
 );
 
 create table if not exists core.coverage (
@@ -132,22 +143,114 @@ create table if not exists core.claim (
     claim_id text primary key,
     patient_id text not null references core.patient(patient_id),
     service_date date not null,
+    payer_id text references core.payer(payer_id),
+    billing_provider_id text references core.provider(provider_id),
+    claim_frequency_code text not null default '1' constraint claim_frequency_code_check check (claim_frequency_code in ('1', '7', '8')),
+    original_claim_id text,
     billed_amount numeric(14, 2) not null check (billed_amount >= 0),
     allowed_amount numeric(14, 2) not null check (allowed_amount >= 0),
     paid_amount numeric(14, 2) not null check (paid_amount >= 0),
+    patient_responsibility_amount numeric(14, 2) not null default 0 constraint claim_patient_responsibility_nonnegative_check check (patient_responsibility_amount >= 0),
+    adjustment_amount numeric(14, 2) not null default 0 constraint claim_adjustment_nonnegative_check check (adjustment_amount >= 0),
     check (paid_amount <= allowed_amount and allowed_amount <= billed_amount)
 );
+
+alter table core.claim add column if not exists payer_id text references core.payer(payer_id);
+alter table core.claim add column if not exists billing_provider_id text references core.provider(provider_id);
+alter table core.claim add column if not exists claim_frequency_code text not null default '1';
+alter table core.claim add column if not exists original_claim_id text;
+alter table core.claim add column if not exists patient_responsibility_amount numeric(14, 2) not null default 0;
+alter table core.claim add column if not exists adjustment_amount numeric(14, 2) not null default 0;
 
 create table if not exists core.claim_line (
     claim_line_id text primary key,
     claim_id text not null references core.claim(claim_id),
     patient_id text not null references core.patient(patient_id),
     service_date date not null,
+    rendering_provider_id text references core.provider(provider_id),
     billed_amount numeric(14, 2) not null check (billed_amount >= 0),
     allowed_amount numeric(14, 2) not null check (allowed_amount >= 0),
     paid_amount numeric(14, 2) not null check (paid_amount >= 0),
+    patient_responsibility_amount numeric(14, 2) not null default 0 constraint claim_line_patient_responsibility_nonnegative_check check (patient_responsibility_amount >= 0),
+    adjustment_amount numeric(14, 2) not null default 0 constraint claim_line_adjustment_nonnegative_check check (adjustment_amount >= 0),
     check (paid_amount <= allowed_amount and allowed_amount <= billed_amount)
 );
+
+alter table core.claim_line add column if not exists rendering_provider_id text references core.provider(provider_id);
+alter table core.claim_line add column if not exists patient_responsibility_amount numeric(14, 2) not null default 0;
+alter table core.claim_line add column if not exists adjustment_amount numeric(14, 2) not null default 0;
+
+do $$
+begin
+    if not exists (
+        select 1 from pg_constraint
+        where conname = 'claim_frequency_code_check'
+          and conrelid = 'core.claim'::regclass
+    ) then
+        alter table core.claim
+            add constraint claim_frequency_code_check check (claim_frequency_code in ('1', '7', '8'));
+    end if;
+    if not exists (
+        select 1 from pg_constraint
+        where conname = 'claim_patient_responsibility_nonnegative_check'
+          and conrelid = 'core.claim'::regclass
+    ) then
+        alter table core.claim
+            add constraint claim_patient_responsibility_nonnegative_check check (patient_responsibility_amount >= 0);
+    end if;
+    if not exists (
+        select 1 from pg_constraint
+        where conname = 'claim_adjustment_nonnegative_check'
+          and conrelid = 'core.claim'::regclass
+    ) then
+        alter table core.claim
+            add constraint claim_adjustment_nonnegative_check check (adjustment_amount >= 0);
+    end if;
+    if not exists (
+        select 1 from pg_constraint
+        where conname = 'claim_line_patient_responsibility_nonnegative_check'
+          and conrelid = 'core.claim_line'::regclass
+    ) then
+        alter table core.claim_line
+            add constraint claim_line_patient_responsibility_nonnegative_check check (patient_responsibility_amount >= 0);
+    end if;
+    if not exists (
+        select 1 from pg_constraint
+        where conname = 'claim_line_adjustment_nonnegative_check'
+          and conrelid = 'core.claim_line'::regclass
+    ) then
+        alter table core.claim_line
+            add constraint claim_line_adjustment_nonnegative_check check (adjustment_amount >= 0);
+    end if;
+end $$;
+
+create table if not exists core.claim_diagnosis (
+    claim_id text not null references core.claim(claim_id),
+    diagnosis_sequence integer not null check (diagnosis_sequence > 0),
+    code_system text not null,
+    code text not null,
+    primary key (claim_id, diagnosis_sequence)
+);
+
+create table if not exists core.claim_line_procedure (
+    claim_line_id text not null references core.claim_line(claim_line_id),
+    code_system text not null,
+    code text not null,
+    primary key (claim_line_id, code_system, code)
+);
+
+create table if not exists core.claim_line_adjustment (
+    claim_line_id text not null references core.claim_line(claim_line_id),
+    adjustment_group_code text not null,
+    adjustment_reason_code text not null,
+    adjustment_amount numeric(14, 2) not null check (adjustment_amount > 0),
+    primary key (claim_line_id, adjustment_group_code, adjustment_reason_code)
+);
+
+create index if not exists ix_claim_payer_id on core.claim (payer_id);
+create index if not exists ix_claim_billing_provider_id on core.claim (billing_provider_id);
+create index if not exists ix_claim_original_claim_id on core.claim (original_claim_id);
+create index if not exists ix_claim_line_rendering_provider_id on core.claim_line (rendering_provider_id);
 
 create table if not exists core.hl7_observation (
     hl7_observation_id bigint generated always as identity primary key,

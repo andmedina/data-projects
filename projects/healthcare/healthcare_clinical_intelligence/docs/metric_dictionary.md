@@ -20,11 +20,11 @@
 
 **Status:** implemented for the controlled synthetic claims source.
 
-**Definition:** sum of service-line `paid_amount` within the claim service month. Claim header totals must reconcile to service-line totals.
+**Definition:** sum of service-line `paid_amount` within the claim service month for the current adjudication state. A claim referenced by a replacement or void is excluded; the terminal replacement is included and a terminal void contributes no cost. Claim header totals must reconcile to service-line totals.
 
 **Grain:** reporting month.
 
-**Limitation:** This is synthetic financial activity, not adjudicated production claims or a measure of total cost of care.
+**Limitation:** This is synthetic financial activity, not adjudicated production claims or a measure of total cost of care. The controlled model does not implement every X12 reversal, coordination-of-benefits, or remittance scenario.
 
 ## Clinical activity volume
 

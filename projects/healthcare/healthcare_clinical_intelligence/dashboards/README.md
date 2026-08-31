@@ -25,6 +25,8 @@ Run `quality-gate` before the export so the data-trust page receives the latest 
 
 The laboratory page should display final-result volume, populated values, documented absent reasons, unexplained missing results, and completeness percentage together. It must state that completeness is a data-pipeline measure rather than clinical interpretation.
 
+The claims-cost page uses only the current adjudication state: superseded originals and terminal void claims are excluded. Display paid, patient-responsibility, and reason-coded adjustment amounts separately; do not add original and replacement versions together.
+
 ## File-only prototype
 
 For a file-based prototype, export dashboard-ready data without a database:

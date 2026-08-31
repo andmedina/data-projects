@@ -33,3 +33,9 @@ def test_airflow_dag_enforces_persistent_quality_gate() -> None:
 def test_lab_completeness_controls_are_registered() -> None:
     assert "final_laboratory_observations_missing_result" in QUALITY_CHECK_QUERIES
     assert "final_laboratory_observations_missing_effective_at" in QUALITY_CHECK_QUERIES
+
+
+def test_expanded_claim_controls_are_registered() -> None:
+    assert "adjusted_claims_missing_original" in QUALITY_CHECK_QUERIES
+    assert "claim_line_adjustment_mismatches" in QUALITY_CHECK_QUERIES
+    assert "inconsistent_claim_header_attributes" in QUALITY_CHECK_QUERIES

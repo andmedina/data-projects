@@ -40,10 +40,20 @@ It returns ingestion counts and core-model quality results. A healthy sample run
 ```bash
 PYTHONPATH=src python -m healthcare_clinical_intelligence.cli hl7-file data/samples/adt_a01.hl7 --output output/hl7
 PYTHONPATH=src python -m healthcare_clinical_intelligence.cli claims-file data/samples/claims.csv --output output/claims
+PYTHONPATH=src python -m healthcare_clinical_intelligence.cli claims-file data/samples/claims_expanded.csv --output output/claims-expanded
 PYTHONPATH=src python -m healthcare_clinical_intelligence.cli hl7-postgres data/samples/oru_r01.hl7 --dsn "postgresql://healthcare_app:change-me@localhost:55432/healthcare_clinical_intelligence"
 ```
 
 These validate and quarantine controlled synthetic inputs; claims and ORU results also have canonical PostgreSQL paths. They do not replace certified HL7/X12 implementations.
+
+After the FHIR sample has created patient `p-001`, run the expanded claims database path and its quality gate:
+
+```bash
+PYTHONPATH=src python -m healthcare_clinical_intelligence.cli claims-pipeline data/samples/claims_expanded.csv --dsn "postgresql://healthcare_app:change-me@localhost:55432/healthcare_clinical_intelligence"
+PYTHONPATH=src python -m healthcare_clinical_intelligence.cli quality-gate --triggered-by claims-expansion-validation --dsn "postgresql://healthcare_app:change-me@localhost:55432/healthcare_clinical_intelligence"
+```
+
+A second identical pipeline run must report three duplicates and zero newly loaded lines. The critical claims controls must all pass.
 
 ## Generate larger synthetic fixtures
 

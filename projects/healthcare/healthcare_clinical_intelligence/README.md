@@ -52,7 +52,7 @@ See [the architecture](docs/architecture.md), [project charter](docs/project_cha
 Implemented locally:
 
 - FHIR Bundle ingestion with validation, idempotency metadata, quarantine, reference-resolution controls, and core-load SQL;
-- controlled HL7 v2 parsing plus claims CSV validation, raw loading, quarantine, and claim/claim-line modeling;
+- controlled HL7 v2 parsing plus claims CSV validation, raw loading, quarantine, payer/provider dimensions, diagnosis/procedure coding, adjustment lineage, and claim/claim-line modeling;
 - auditable quality definitions, run history, result evidence, and an Airflow-blocking critical gate;
 - typed FHIR Observation values/UCUM units plus missing-laboratory-result detection and recovery evidence;
 - incremental FHIR API client and PostgreSQL checkpoint design;

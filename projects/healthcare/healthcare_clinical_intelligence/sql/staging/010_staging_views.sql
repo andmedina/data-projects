@@ -139,10 +139,37 @@ select source_resource_id as medication_request_id, regexp_replace(payload #>> '
 from latest_resource where resource_type = 'MedicationRequest' and source_version_rank = 1;
 
 create or replace view staging.stg_claim_line as
+with latest_claim_line as (
+    select *,
+           row_number() over (
+               partition by source_system, source_claim_line_id
+               order by raw_claim_line_id desc
+           ) as source_version_rank
+    from raw.claim_line
+)
 select source_claim_id as claim_id, source_claim_line_id as claim_line_id,
        payload ->> 'patient_id' as patient_id, (payload ->> 'service_date')::date as service_date,
        (payload ->> 'billed_amount')::numeric(14,2) as billed_amount,
        (payload ->> 'allowed_amount')::numeric(14,2) as allowed_amount,
        (payload ->> 'paid_amount')::numeric(14,2) as paid_amount,
-       raw_claim_line_id
-from raw.claim_line;
+       raw_claim_line_id,
+       source_system,
+       payload ->> 'payer_id' as payer_id,
+       payload ->> 'payer_name' as payer_name,
+       payload ->> 'billing_provider_id' as billing_provider_id,
+       payload ->> 'billing_provider_npi' as billing_provider_npi,
+       payload ->> 'billing_provider_name' as billing_provider_name,
+       payload ->> 'rendering_provider_id' as rendering_provider_id,
+       payload ->> 'rendering_provider_npi' as rendering_provider_npi,
+       payload ->> 'rendering_provider_name' as rendering_provider_name,
+       payload ->> 'diagnosis_codes' as diagnosis_codes,
+       payload ->> 'procedure_code_system' as procedure_code_system,
+       payload ->> 'procedure_code' as procedure_code,
+       coalesce(nullif(payload ->> 'claim_frequency_code', ''), '1') as claim_frequency_code,
+       nullif(payload ->> 'original_claim_id', '') as original_claim_id,
+       coalesce(nullif(payload ->> 'patient_responsibility_amount', '')::numeric(14,2), 0) as patient_responsibility_amount,
+       payload ->> 'adjustment_group_code' as adjustment_group_code,
+       payload ->> 'adjustment_reason_code' as adjustment_reason_code,
+       coalesce(nullif(payload ->> 'adjustment_amount', '')::numeric(14,2), 0) as adjustment_amount
+from latest_claim_line
+where source_version_rank = 1;

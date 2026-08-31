@@ -10,6 +10,8 @@ Controls are implemented at ingestion, staging, core, and analytics boundaries. 
 | Encounter end before start | reject from core load |
 | Unresolved cross-resource reference | quarantine with patient/encounter reason code |
 | Claims paid/allowed/billed hierarchy | quarantine claim line |
+| Incomplete payer/provider/procedure/adjustment fields | quarantine claim line |
+| Invalid replacement/void original-claim reference | fail the persistent gate |
 
 ## Persistent gate
 
@@ -22,6 +24,9 @@ Default error-severity checks enforce:
 - completed ED encounter reporting timestamps;
 - claim-line referential integrity;
 - exact claim header-to-line financial reconciliation;
+- exact claim-line summary-to-adjustment-detail reconciliation;
+- replacement/void claim-to-original integrity;
+- cross-line agreement for repeated claim-header attributes;
 - final laboratory result or documented absent-reason completeness; and
 - final laboratory effective-time completeness.
 

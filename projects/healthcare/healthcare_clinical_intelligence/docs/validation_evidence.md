@@ -51,6 +51,14 @@ A 20-patient generated Bundle containing 317 resources was processed with zero r
 
 The synthetic claims CSV loaded one valid service line to `raw.claim_line`, then built one canonical claim header and one canonical claim line. Its billed, allowed, and paid amounts were 200.00, 150.00, and 120.00 respectively. A rerun loaded zero new records and identified one duplicate. The new header-to-line reconciliation query returned no discrepancies.
 
+## Expanded claims dimensions and adjudication lineage
+
+On August 30, 2026, `claims_expanded.csv` loaded three valid line payloads covering an original two-line claim and its one-line replacement. The load populated one payer, two claims-origin providers, four ordered claim diagnoses, three line procedures, and three reason-coded line adjustments in the shared development database. Including the earlier base fixture, canonical totals were three claims and four claim lines. The expanded load rejected zero rows.
+
+An identical rerun loaded zero raw rows and classified all three inputs as duplicates. Latest-version staging prevented retained history from multiplying canonical totals. The 13-control persistent gate passed all 12 non-warning controls, including original-claim integrity, header/line financial reconciliation, line/adjustment reconciliation, and cross-line header consistency. The only warning remained the two deliberate FHIR quarantine fixtures, so the gate completed `passed_with_warnings` with zero blocking results.
+
+The replacement claim `c-101` resolved to original `c-100`. The adjudication-aware cost mart excluded the superseded original and reported February 2025 as one current claim/line with billed 180.00, allowed 140.00, paid 110.00, patient responsibility 30.00, and adjustment 40.00. This prevents original and replacement versions from being added together in dashboard totals.
+
 ## HL7 v2 result ingestion
 
 The synthetic ORU^R01 fixture loaded one raw HL7 message and mapped its OBX result to `core.hl7_observation` for patient `p-001`. The mapped result retained the message control ID `MSG0002`, LOINC code `8310-5`, value `37.1`, unit `Cel`, and final status `F`. A rerun loaded zero new messages and zero new observations, confirming message-hash and OBX-key idempotency.

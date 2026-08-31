@@ -28,17 +28,49 @@ QUALITY_CHECK_QUERIES = {
             select c.claim_id
             from core.claim c
             left join core.claim_line cl on cl.claim_id = c.claim_id
-            group by c.claim_id, c.billed_amount, c.allowed_amount, c.paid_amount
+            group by c.claim_id, c.billed_amount, c.allowed_amount, c.paid_amount,
+                     c.patient_responsibility_amount, c.adjustment_amount
             having count(cl.claim_line_id) = 0
                 or c.billed_amount <> sum(cl.billed_amount)
                 or c.allowed_amount <> sum(cl.allowed_amount)
                 or c.paid_amount <> sum(cl.paid_amount)
+                or c.patient_responsibility_amount <> sum(cl.patient_responsibility_amount)
+                or c.adjustment_amount <> sum(cl.adjustment_amount)
         ) mismatches
     """,
     "orphan_claim_lines": """
         select count(*) from core.claim_line cl
         left join core.claim c on c.claim_id = cl.claim_id
         where c.claim_id is null
+    """,
+    "adjusted_claims_missing_original": """
+        select count(*) from core.claim adjusted
+        left join core.claim original on original.claim_id = adjusted.original_claim_id
+        where adjusted.claim_frequency_code in ('7', '8')
+          and original.claim_id is null
+    """,
+    "claim_line_adjustment_mismatches": """
+        select count(*) from (
+            select cl.claim_line_id
+            from core.claim_line cl
+            left join core.claim_line_adjustment adjustment
+              on adjustment.claim_line_id = cl.claim_line_id
+            group by cl.claim_line_id, cl.adjustment_amount
+            having cl.adjustment_amount <> coalesce(sum(adjustment.adjustment_amount), 0)
+        ) mismatches
+    """,
+    "inconsistent_claim_header_attributes": """
+        select count(*) from (
+            select claim_id
+            from staging.stg_claim_line
+            group by claim_id
+            having count(distinct patient_id) > 1
+                or count(distinct coalesce(payer_id, '')) > 1
+                or count(distinct coalesce(billing_provider_id, '')) > 1
+                or count(distinct claim_frequency_code) > 1
+                or count(distinct coalesce(original_claim_id, '')) > 1
+                or count(distinct coalesce(diagnosis_codes, '')) > 1
+        ) inconsistent_claims
     """,
     "final_laboratory_observations_missing_result": """
         select count(*) from core.observation

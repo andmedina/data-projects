@@ -47,3 +47,9 @@ def test_dashboard_bundle_writes_all_datasets_and_manifest(tmp_path: Path) -> No
     assert json.loads((tmp_path / "dashboard" / "manifest.json").read_text())["source"].startswith("PostgreSQL")
     with (tmp_path / "dashboard" / "executive_overview.csv").open(newline="") as handle:
         assert list(csv.reader(handle)) == [["metric", "value"], ["executive_overview", "1"]]
+
+
+def test_dashboard_claim_queries_use_current_adjudication_state() -> None:
+    assert "successor.original_claim_id = claim.claim_id" in EXPORT_QUERIES["executive_overview"]
+    assert "patient_responsibility_amount" in EXPORT_QUERIES["claim_cost_monthly"]
+    assert "adjustment_amount" in EXPORT_QUERIES["claim_cost_monthly"]

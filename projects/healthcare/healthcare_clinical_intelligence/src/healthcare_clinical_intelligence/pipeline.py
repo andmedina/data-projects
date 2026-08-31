@@ -7,7 +7,7 @@ import json
 from pathlib import Path
 from typing import Any
 
-from .claims import iter_claim_rows, validate_claim_row
+from .claims import iter_validated_claim_rows
 from .fhir import iter_resources, normalize_resource, validate_resource
 from .hl7 import parse_message
 
@@ -37,8 +37,7 @@ def run_fhir_file(input_path: Path, output_dir: Path) -> dict[str, int]:
 def run_claims_file(input_path: Path, output_dir: Path) -> dict[str, int]:
     output_dir.mkdir(parents=True, exist_ok=True)
     accepted, rejected = [], []
-    for row in iter_claim_rows(input_path):
-        errors = validate_claim_row(row)
+    for row, errors in iter_validated_claim_rows(input_path):
         (rejected if errors else accepted).append({"reason_codes": errors, "payload": row} if errors else row)
     (output_dir / "accepted_claims.jsonl").write_text("".join(json.dumps(row) + "\n" for row in accepted))
     (output_dir / "quarantine_claims.jsonl").write_text("".join(json.dumps(row) + "\n" for row in rejected))
