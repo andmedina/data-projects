@@ -49,6 +49,8 @@ values
     ('orphan_observations', 'Canonical observations without a canonical patient', 'integrity', 'error', 0),
     ('invalid_encounter_periods', 'Encounters whose end timestamp precedes the start timestamp', 'validity', 'error', 0),
     ('completed_ed_encounters_missing_start', 'Completed emergency encounters without a reporting timestamp', 'completeness', 'error', 0),
+    ('active_coverages_missing_period', 'Active coverages without both eligibility-period boundaries', 'completeness', 'error', 0),
+    ('overlapping_active_coverages', 'Overlapping active coverage periods for the same patient and payer', 'validity', 'error', 0),
     ('claim_header_line_mismatches', 'Claim headers that do not reconcile to their service lines', 'reconciliation', 'error', 0),
     ('orphan_claim_lines', 'Canonical claim lines without a canonical claim header', 'integrity', 'error', 0),
     ('adjusted_claims_missing_original', 'Replacement or void claims without the referenced original claim', 'integrity', 'error', 0),

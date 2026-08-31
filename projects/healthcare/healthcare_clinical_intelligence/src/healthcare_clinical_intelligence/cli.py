@@ -7,7 +7,7 @@ from pathlib import Path
 from .pipeline import run_claims_file, run_fhir_file, run_hl7_file
 from .postgres import database_quality_report, execute_sql_file, load_claims_csv, load_core_and_report, load_fhir_incremental, load_fhir_payload, load_hl7_file, open_connection, run_claims_database_pipeline, run_fhir_database_pipeline
 from .synthetic import generate_fhir_bundle
-from .analytics import clinical_activity_from_accepted, ed_utilization_from_accepted
+from .analytics import clinical_activity_from_accepted, ed_utilization_from_accepted, eligible_ed_utilization_from_accepted
 from .ml import export_readmission_cohort
 from .fhir_client import publish_bundle
 from .modeling import train_readmission_baseline
@@ -34,6 +34,16 @@ def main() -> None:
     ed = subparsers.add_parser("ed-utilization", help="Export monthly ED utilization from accepted FHIR records")
     ed.add_argument("accepted_input", type=Path)
     ed.add_argument("--output", type=Path, default=Path("output/ed_utilization_monthly.csv"))
+    eligible_ed = subparsers.add_parser(
+        "eligible-ed-utilization",
+        help="Export payer-specific ED encounters per 1,000 active-coverage member months",
+    )
+    eligible_ed.add_argument("accepted_input", type=Path)
+    eligible_ed.add_argument(
+        "--output",
+        type=Path,
+        default=Path("output/ed_utilization_eligible_monthly.csv"),
+    )
     clinical = subparsers.add_parser("clinical-activity", help="Export monthly condition, procedure, and medication activity")
     clinical.add_argument("accepted_input", type=Path)
     clinical.add_argument("--output", type=Path, default=Path("output/clinical_activity_monthly.csv"))
@@ -112,6 +122,9 @@ def main() -> None:
         print(json.dumps({"output": str(args.output), "resources": len(bundle["entry"]), "patients": args.patients}))
     elif args.command == "ed-utilization":
         rows = ed_utilization_from_accepted(args.accepted_input, args.output)
+        print(json.dumps({"output": str(args.output), "rows": len(rows)}, indent=2))
+    elif args.command == "eligible-ed-utilization":
+        rows = eligible_ed_utilization_from_accepted(args.accepted_input, args.output)
         print(json.dumps({"output": str(args.output), "rows": len(rows)}, indent=2))
     elif args.command == "clinical-activity":
         rows = clinical_activity_from_accepted(args.accepted_input, args.output)

@@ -102,7 +102,9 @@ with latest_resource as (
     from raw.fhir_resource
 )
 select source_resource_id as coverage_id, regexp_replace(payload #>> '{beneficiary,reference}', '^.*/', '') as patient_id,
-       regexp_replace(payload #>> '{payor,0,reference}', '^.*/', '') as payer_organization_id, payload ->> 'status' as coverage_status, raw_resource_id
+       regexp_replace(payload #>> '{payor,0,reference}', '^.*/', '') as payer_organization_id, payload ->> 'status' as coverage_status, raw_resource_id,
+       payload #>> '{period,start}' as coverage_start,
+       payload #>> '{period,end}' as coverage_end
 from latest_resource where resource_type = 'Coverage' and source_version_rank = 1;
 
 create or replace view staging.stg_condition as

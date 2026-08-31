@@ -25,6 +25,8 @@
 | `core.hl7_encounter_event` | one controlled ADT lifecycle event | `hl7_encounter_event_id` |
 | `core.hl7_order_event` | one order event per ORM message/order | `hl7_order_event_id` |
 | `mart.ed_utilization_monthly` | reporting month | `reporting_month` |
+| `mart.member_eligibility_monthly` | reporting month and payer organization | `reporting_month` + `payer_organization_id` |
+| `mart.ed_utilization_eligible_monthly` | reporting month and payer organization | `reporting_month` + `payer_organization_id` |
 | `mart.clinical_activity_monthly` | reporting month | `reporting_month` |
 | `mart.claim_cost_monthly` | reporting month | `reporting_month` |
 | `mart.lab_result_completeness_monthly` | laboratory result month | `reporting_month` |
@@ -32,5 +34,7 @@
 | `mart.hl7_order_current_state` | one latest event per HL7 order | `order_id` |
 
 `core.observation` retains source category and code, effective time, explicit value type, separate numeric/text/boolean/coded value fields, Quantity unit/system/code, documented absent reason, and the raw source-version key. Typed fields must not be coalesced when validating result completeness.
+
+`core.coverage` retains status, patient and payer references, typed `coverage_start` and `coverage_end`, and the raw source-version key. The eligibility mart counts each distinct patient/payer/month once, even if defensive deduplication is needed.
 
 `core.claim` carries payer and billing-provider keys, frequency/original-claim lineage, and financial totals. `core.claim_line` carries the rendering-provider key and line financials. Both retain paid, allowed, billed, patient-responsibility, and adjustment amounts so headers can be reconciled exactly to detail.

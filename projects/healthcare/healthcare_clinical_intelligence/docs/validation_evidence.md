@@ -91,6 +91,14 @@ After the dashboard data product was added, the full PostgreSQL migration and ex
 
 The independent DA-001 validation recomputed the metric directly from `core.encounter`. It returned zero differences from `mart.ed_utilization_monthly`, found 68 qualifying completed emergency encounters across 12 months, and found zero qualifying encounters without a start timestamp. The count differs from the earlier 69-encounter scale test because later synthetic source versions were loaded into the shared development database; the latest-version staging rule intentionally determines the current canonical state.
 
+## Eligibility-aware population health
+
+On August 31, 2026, a deterministic 100-patient Coverage-enabled Bundle contained 1,553 FHIR resources, including a distinct synthetic payer Organization. The file path accepted all 1,553 with zero rejects. In the shared PostgreSQL environment, the final load added the new payer and 100 corrected Coverage payload versions, identified 1,452 unchanged payloads as duplicates, rejected none, and populated 100 active Coverage records whose periods expanded to 950 distinct member months across 12 payer-month rows. The equivalent file-only path emitted the same 12-month contract for the generated Bundle.
+
+In the shared development database, 58 completed ED encounters occurred during an eligible month, covering 56 patient-months with ED use. Independent DA-002 SQL returned zero denominator discrepancies, zero numerator/patient discrepancies, zero rate-formula discrepancies, zero active Coverage records with missing periods, and zero overlapping active periods for the same patient/payer.
+
+The expanded gate evaluated 18 controls: 17 passed, the historical deliberate FHIR-quarantine volume warned, and no result was blocking. The refreshed dashboard bundle contained 15 datasets when the governed model artifacts were included, adding 12 member-eligibility rows and 12 eligibility-aware ED rows; `data_quality.csv` contained all 18 latest control results.
+
 ## Persistent data-quality gate
 
 DE-005 added eight database-configured checks with durable run and result history. Live normal-mode evaluation persisted eight results: seven passed and the FHIR quarantine-volume control warned because two deliberately malformed fixtures remain retained. All error-severity controls passed, so the overall state was `passed_with_warnings` with zero blocking results.

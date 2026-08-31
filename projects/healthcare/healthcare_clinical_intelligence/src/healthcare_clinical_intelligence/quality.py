@@ -23,6 +23,27 @@ QUALITY_CHECK_QUERIES = {
           and encounter_status in ('finished', 'completed')
           and start_at is null
     """,
+    "active_coverages_missing_period": """
+        select count(*) from core.coverage
+        where coverage_status = 'active'
+          and (coverage_start is null or coverage_end is null)
+    """,
+    "overlapping_active_coverages": """
+        select count(*)
+        from core.coverage first_coverage
+        join core.coverage second_coverage
+          on second_coverage.patient_id = first_coverage.patient_id
+         and second_coverage.payer_organization_id is not distinct from first_coverage.payer_organization_id
+         and second_coverage.coverage_id > first_coverage.coverage_id
+         and second_coverage.coverage_status = 'active'
+         and second_coverage.coverage_start <= first_coverage.coverage_end
+         and first_coverage.coverage_start <= second_coverage.coverage_end
+        where first_coverage.coverage_status = 'active'
+          and first_coverage.coverage_start is not null
+          and first_coverage.coverage_end is not null
+          and second_coverage.coverage_start is not null
+          and second_coverage.coverage_end is not null
+    """,
     "claim_header_line_mismatches": """
         select count(*) from (
             select c.claim_id

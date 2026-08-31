@@ -13,6 +13,8 @@ Controls are implemented at ingestion, staging, core, and analytics boundaries. 
 | Incomplete payer/provider/procedure/adjustment fields | quarantine claim line |
 | Invalid replacement/void original-claim reference | fail the persistent gate |
 | Invalid ADT lifecycle or unmapped accepted HL7 message | fail the persistent gate |
+| Active Coverage without a complete period | fail the persistent gate |
+| Overlapping active Coverage for one patient/payer | fail the persistent gate |
 
 ## Persistent gate
 
@@ -23,6 +25,7 @@ Default error-severity checks enforce:
 - observation-to-patient integrity;
 - encounter temporal validity;
 - completed ED encounter reporting timestamps;
+- complete, ordered, non-overlapping active Coverage periods at patient/payer grain;
 - claim-line referential integrity;
 - exact claim header-to-line financial reconciliation;
 - exact claim-line summary-to-adjustment-detail reconciliation;

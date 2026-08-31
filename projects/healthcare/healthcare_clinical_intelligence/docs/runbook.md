@@ -70,6 +70,7 @@ A second identical pipeline run must report three duplicates and zero newly load
 PYTHONPATH=src python -m healthcare_clinical_intelligence.cli generate-synthetic --patients 250 --seed 42 --output data/synthetic/fhir_bundle.json
 PYTHONPATH=src python -m healthcare_clinical_intelligence.cli fhir-file data/synthetic/fhir_bundle.json --output output/generated
 PYTHONPATH=src python -m healthcare_clinical_intelligence.cli ed-utilization output/generated/accepted.jsonl
+PYTHONPATH=src python -m healthcare_clinical_intelligence.cli eligible-ed-utilization output/generated/accepted.jsonl
 PYTHONPATH=src python -m healthcare_clinical_intelligence.cli readmission-cohort output/generated/accepted.jsonl
 PYTHONPATH=src python -m healthcare_clinical_intelligence.cli train-readmission-baseline output/readmission_cohort.csv --fail-on-governance
 ```
@@ -102,7 +103,16 @@ Run the persistent quality gate before exporting:
 PYTHONPATH=src python -m healthcare_clinical_intelligence.cli quality-gate --dsn "postgresql://healthcare_app:change-me@localhost:55432/healthcare_clinical_intelligence"
 ```
 
-Then confirm that `data_quality.csv` contains no `fail` or `error` statuses and run `tickets/DA-001_ed_utilization/validation.sql` independently before publishing ED visuals. Warning rows require documented review. The generated output is intentionally ignored by Git.
+Then confirm that `data_quality.csv` contains no `fail` or `error` statuses. Run both `tickets/DA-001_ed_utilization/validation.sql` and `tickets/DA-002_eligibility_aware_ed_utilization/validation.sql` independently before publishing ED visuals. Warning rows require documented review. The generated output is intentionally ignored by Git.
+
+For the controlled population-health validation, generate and load a Coverage-enabled synthetic Bundle, then verify the critical Coverage controls and independent mart reconciliation:
+
+```bash
+PYTHONPATH=src python -m healthcare_clinical_intelligence.cli generate-synthetic --patients 100 --seed 42 --output output/population_health/fhir_bundle_100.json
+PYTHONPATH=src python -m healthcare_clinical_intelligence.cli fhir-pipeline output/population_health/fhir_bundle_100.json --source-system synthetic_population_health_v1 --dsn "postgresql://healthcare_app:change-me@localhost:55432/healthcare_clinical_intelligence"
+PYTHONPATH=src python -m healthcare_clinical_intelligence.cli quality-gate --triggered-by population-health-validation --dsn "postgresql://healthcare_app:change-me@localhost:55432/healthcare_clinical_intelligence"
+psql "postgresql://healthcare_app:change-me@localhost:55432/healthcare_clinical_intelligence" -f tickets/DA-002_eligibility_aware_ed_utilization/validation.sql
+```
 
 ## Reproduce the missing-laboratory-result incident
 

@@ -16,6 +16,24 @@
 
 **Limitation:** This denominator measures observed ED users, not eligible member months, so the ratio must not be labeled a population utilization rate. Facility and demographic segments are deferred until their mappings are present and validated.
 
+## Eligibility-aware emergency department utilization
+
+**Status:** implemented and independently reconciled for the controlled synthetic Coverage profile.
+
+**Business question:** How many completed ED encounters occur per 1,000 covered member months for each payer?
+
+**Numerator:** encounters whose normalized class is `EMER`, whose status is `finished` or `completed`, whose start timestamp falls in the reporting month, and whose patient has active Coverage for that payer during the same month.
+
+**Denominator:** distinct patient/payer/month combinations expanded from inclusive active Coverage periods.
+
+**Calculation:** `1,000 × eligible ED encounters ÷ member months`, rounded to two decimal places.
+
+**Grain:** reporting month and payer organization.
+
+**Validation:** `tickets/DA-002_eligibility_aware_ed_utilization/validation.sql` independently rebuilds the denominator and numerator and verifies the published rate.
+
+**Limitations:** Any calendar-month overlap counts as one full member month; partial months are not prorated. When a patient has simultaneous Coverage from multiple payers, the encounter is attributed to each payer because the controlled Encounter profile does not identify the responsible Coverage. The result is synthetic and is not a certified HEDIS measure.
+
 ## Claim paid amount
 
 **Status:** implemented for the controlled synthetic claims source.

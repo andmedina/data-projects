@@ -4,6 +4,8 @@
 
 `FHIR Encounter` → `raw.fhir_resource` → `staging.stg_encounter` → `core.encounter` → `mart.ed_utilization_monthly` → Power BI utilization page.
 
+`FHIR Coverage` + eligible `FHIR Encounter` → raw/staging/core clinical layers → distinct patient/payer/month expansion → `mart.member_eligibility_monthly` + `mart.ed_utilization_eligible_monthly` → Power BI population-health page.
+
 `FHIR Condition / Procedure / MedicationRequest` → `raw.fhir_resource` → typed staging views → canonical core entities → `mart.clinical_activity_monthly` → Power BI clinical-activity page.
 
 `Claims CSV line` → versioned `raw.claim_line` → latest `staging.stg_claim_line` → payer/provider dimensions + claim/header detail + diagnosis/procedure/adjustment children → `mart.claim_cost_monthly` → Power BI claims-cost page.

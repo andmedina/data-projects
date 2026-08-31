@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from collections.abc import Iterable
+from datetime import date
 from typing import Any
 
 SUPPORTED_RESOURCES = {
@@ -72,6 +73,28 @@ def validate_resource(resource: dict[str, Any]) -> list[str]:
             quantity_value = quantity.get("value") if isinstance(quantity, dict) else None
             if quantity_value is not None and (isinstance(quantity_value, bool) or not isinstance(quantity_value, (int, float))):
                 errors.append("INVALID_OBSERVATION_QUANTITY_VALUE")
+    if resource_type == "Coverage":
+        period_payload = resource.get("period")
+        period = period_payload if isinstance(period_payload, dict) else {}
+        start = period.get("start")
+        end = period.get("end")
+        if not resource.get("status"):
+            errors.append("MISSING_COVERAGE_STATUS")
+        payors = resource.get("payor") or []
+        if not payors or not isinstance(payors[0], dict) or not payors[0].get("reference"):
+            errors.append("MISSING_COVERAGE_PAYOR")
+        if not start:
+            errors.append("MISSING_COVERAGE_PERIOD_START")
+        if not end:
+            errors.append("MISSING_COVERAGE_PERIOD_END")
+        if period_payload is not None and not isinstance(period_payload, dict):
+            errors.append("INVALID_COVERAGE_PERIOD")
+        if start and end:
+            try:
+                if date.fromisoformat(end[:10]) < date.fromisoformat(start[:10]):
+                    errors.append("INVALID_COVERAGE_PERIOD")
+            except (TypeError, ValueError):
+                errors.append("INVALID_COVERAGE_PERIOD")
     return errors
 
 
@@ -101,10 +124,13 @@ def normalize_resource(resource: dict[str, Any]) -> dict[str, Any]:
         name = (resource.get("name") or [{}])[0]
         return base | {"name": " ".join(part for part in [name.get("given", [None])[0], name.get("family")] if part)}
     if resource_type == "Coverage":
+        period = resource.get("period") or {}
         return base | {
             "patient_id": reference_id((resource.get("beneficiary") or {}).get("reference")),
             "payer_id": reference_id((resource.get("payor") or [{}])[0].get("reference")),
             "status": resource.get("status"),
+            "coverage_start": period.get("start"),
+            "coverage_end": period.get("end"),
         }
     if resource_type in {"Condition", "Procedure", "MedicationRequest"}:
         subject = resource.get("subject") or {}

@@ -22,6 +22,11 @@ def generate_fhir_bundle(patient_count: int = 25, seed: int = 42) -> dict[str, A
             "name": [{"given": ["Avery"], "family": "Morgan"}],
             "meta": {"lastUpdated": start.isoformat().replace("+00:00", "Z")},
         },
+        {
+            "resourceType": "Organization", "id": "synthetic-payer-001", "name": "Synthetic Community Health Plan",
+            "type": [{"coding": [{"system": "http://terminology.hl7.org/CodeSystem/organization-type", "code": "ins"}]}],
+            "meta": {"lastUpdated": start.isoformat().replace("+00:00", "Z")},
+        },
     ])
     for patient_number in range(1, patient_count + 1):
         patient_id = f"synthetic-p-{patient_number:05d}"
@@ -34,7 +39,11 @@ def generate_fhir_bundle(patient_count: int = 25, seed: int = 42) -> dict[str, A
         })
         resources.append({
             "resourceType": "Coverage", "id": f"synthetic-cov-{patient_number:05d}", "status": "active",
-            "beneficiary": {"reference": f"Patient/{patient_id}"}, "payor": [{"reference": "Organization/synthetic-org-001"}],
+            "beneficiary": {"reference": f"Patient/{patient_id}"}, "payor": [{"reference": "Organization/synthetic-payer-001"}],
+            "period": {
+                "start": date(2025, 1 + patient_number % 3, 1).isoformat(),
+                "end": date(2025, 12 - patient_number % 4, 28).isoformat(),
+            },
             "meta": {"lastUpdated": start.isoformat().replace("+00:00", "Z")},
         })
         index_discharge: datetime | None = None

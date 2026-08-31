@@ -61,6 +61,12 @@ def test_dashboard_includes_hl7_current_state_contracts() -> None:
     assert "latest_event_at" in EXPORT_QUERIES["hl7_order_current_state"]
 
 
+def test_dashboard_includes_eligibility_aware_population_health_contracts() -> None:
+    assert "member_eligibility_monthly" in EXPORT_QUERIES
+    assert "ed_utilization_eligible_monthly" in EXPORT_QUERIES
+    assert "ed_encounters_per_1000_member_months" in EXPORT_QUERIES["ed_utilization_eligible_monthly"]
+
+
 def test_dashboard_exports_governed_model_datasets_and_artifacts(tmp_path: Path) -> None:
     report = {
         "experiment_id": "exp-001",

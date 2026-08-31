@@ -52,6 +52,47 @@ def test_observation_rejects_unsupported_value_type():
     assert "UNSUPPORTED_OBSERVATION_VALUE_TYPE" in validate_resource(observation)
 
 
+def test_coverage_requires_a_valid_period_and_normalizes_boundaries():
+    coverage = {
+        "resourceType": "Coverage",
+        "id": "cov-1",
+        "status": "active",
+        "beneficiary": {"reference": "Patient/p1"},
+        "payor": [{"reference": "Organization/payer-1"}],
+        "period": {"start": "2025-01-01", "end": "2025-12-31"},
+    }
+
+    assert validate_resource(coverage) == []
+    assert normalize_resource(coverage) == {
+        "resource_type": "Coverage",
+        "source_resource_id": "cov-1",
+        "patient_id": "p1",
+        "payer_id": "payer-1",
+        "status": "active",
+        "coverage_start": "2025-01-01",
+        "coverage_end": "2025-12-31",
+    }
+
+    coverage["period"] = {"start": "2025-12-31", "end": "2025-01-01"}
+    assert "INVALID_COVERAGE_PERIOD" in validate_resource(coverage)
+
+
+def test_coverage_missing_period_boundaries_is_rejected():
+    coverage = {
+        "resourceType": "Coverage",
+        "id": "cov-2",
+        "status": "active",
+        "beneficiary": {"reference": "Patient/p1"},
+        "period": {},
+    }
+
+    errors = validate_resource(coverage)
+
+    assert "MISSING_COVERAGE_PERIOD_START" in errors
+    assert "MISSING_COVERAGE_PERIOD_END" in errors
+    assert "MISSING_COVERAGE_PAYOR" in errors
+
+
 def test_lab_incident_fixtures_show_missing_then_corrected_value(tmp_path: Path):
     missing_dir = tmp_path / "missing"
     corrected_dir = tmp_path / "corrected"

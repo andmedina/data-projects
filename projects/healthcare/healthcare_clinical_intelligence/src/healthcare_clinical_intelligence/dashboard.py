@@ -44,6 +44,18 @@ EXPORT_QUERIES = {
         from mart.ed_utilization_monthly
         order by reporting_month
     """,
+    "member_eligibility_monthly": """
+        select reporting_month, payer_organization_id, member_months
+        from mart.member_eligibility_monthly
+        order by reporting_month, payer_organization_id
+    """,
+    "ed_utilization_eligible_monthly": """
+        select reporting_month, payer_organization_id, member_months,
+               ed_encounters, patients_with_ed_encounter,
+               ed_encounters_per_1000_member_months
+        from mart.ed_utilization_eligible_monthly
+        order by reporting_month, payer_organization_id
+    """,
     "clinical_activity_monthly": """
         select reporting_month, patients_with_activity, conditions, procedures,
                medication_requests, total_clinical_activities

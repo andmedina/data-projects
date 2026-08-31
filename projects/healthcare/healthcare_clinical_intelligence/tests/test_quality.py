@@ -45,3 +45,9 @@ def test_hl7_lifecycle_controls_are_registered() -> None:
     assert "invalid_hl7_encounter_transitions" in QUALITY_CHECK_QUERIES
     assert "hl7_orders_missing_code" in QUALITY_CHECK_QUERIES
     assert "unmapped_hl7_messages" in QUALITY_CHECK_QUERIES
+
+
+def test_eligibility_controls_are_registered() -> None:
+    assert "active_coverages_missing_period" in QUALITY_CHECK_QUERIES
+    assert "overlapping_active_coverages" in QUALITY_CHECK_QUERIES
+    assert "coverage_start" in QUALITY_CHECK_QUERIES["active_coverages_missing_period"]

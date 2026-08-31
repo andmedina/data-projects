@@ -103,8 +103,34 @@ create table if not exists core.coverage (
     patient_id text not null references core.patient(patient_id),
     payer_organization_id text references core.organization(organization_id),
     coverage_status text,
-    source_raw_resource_id bigint unique references raw.fhir_resource(raw_resource_id)
+    source_raw_resource_id bigint unique references raw.fhir_resource(raw_resource_id),
+    coverage_start date,
+    coverage_end date,
+    constraint coverage_period_check check (
+        coverage_end is null or coverage_start is null or coverage_end >= coverage_start
+    )
 );
+
+alter table core.coverage add column if not exists coverage_start date;
+alter table core.coverage add column if not exists coverage_end date;
+
+do $$
+begin
+    if not exists (
+        select 1 from pg_constraint
+        where conname = 'coverage_period_check'
+          and conrelid = 'core.coverage'::regclass
+    ) then
+        alter table core.coverage
+            add constraint coverage_period_check check (
+                coverage_end is null or coverage_start is null or coverage_end >= coverage_start
+            );
+    end if;
+end $$;
+
+create index if not exists ix_coverage_member_period
+    on core.coverage (patient_id, payer_organization_id, coverage_start, coverage_end)
+    where coverage_status = 'active';
 
 create table if not exists core.condition_occurrence (
     condition_id text primary key,

@@ -76,14 +76,18 @@ from staging.stg_practitioner
 on conflict (provider_id) do update
 set provider_name = excluded.provider_name, source_raw_resource_id = excluded.source_raw_resource_id;
 
-insert into core.coverage (coverage_id, patient_id, payer_organization_id, coverage_status, source_raw_resource_id)
-select coverage_id, patient_id, payer_organization_id, coverage_status, raw_resource_id
+insert into core.coverage
+    (coverage_id, patient_id, payer_organization_id, coverage_status, source_raw_resource_id,
+     coverage_start, coverage_end)
+select coverage_id, patient_id, payer_organization_id, coverage_status, raw_resource_id,
+       nullif(coverage_start, '')::date, nullif(coverage_end, '')::date
 from staging.stg_coverage
 where patient_id in (select patient_id from core.patient)
   and (payer_organization_id is null or payer_organization_id in (select organization_id from core.organization))
 on conflict (coverage_id) do update
 set patient_id = excluded.patient_id, payer_organization_id = excluded.payer_organization_id,
-    coverage_status = excluded.coverage_status, source_raw_resource_id = excluded.source_raw_resource_id;
+    coverage_status = excluded.coverage_status, source_raw_resource_id = excluded.source_raw_resource_id,
+    coverage_start = excluded.coverage_start, coverage_end = excluded.coverage_end;
 
 insert into core.condition_occurrence (condition_id, patient_id, encounter_id, clinical_status, coding_system, code, recorded_at, source_raw_resource_id)
 select condition_id, patient_id, encounter_id, clinical_status, coding_system, code, nullif(recorded_at, '')::timestamptz, raw_resource_id

@@ -13,3 +13,4 @@
 \ir marts/032_clinical_activity.sql
 \ir marts/033_lab_result_completeness.sql
 \ir marts/034_hl7_operational.sql
+\ir marts/035_population_health.sql
