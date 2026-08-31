@@ -63,6 +63,20 @@ EXPORT_QUERIES = {
         from mart.lab_result_completeness_monthly
         order by reporting_month
     """,
+    "hl7_encounter_current_state": """
+        select encounter_id, patient_id, current_state, patient_class,
+               current_location, latest_event_at, admitted_at, discharged_at,
+               lifecycle_events
+        from mart.hl7_encounter_current_state
+        order by latest_event_at desc, encounter_id
+    """,
+    "hl7_order_current_state": """
+        select order_id, patient_id, encounter_id, order_control, order_status,
+               code_system, code, code_display, ordered_at, latest_event_at,
+               message_control_id
+        from mart.hl7_order_current_state
+        order by ordered_at desc, order_id
+    """,
     "data_quality": """
         select qr.quality_run_id::text, qr.check_name, qr.quality_dimension,
                qr.severity, qr.observed_value, qr.failure_threshold,

@@ -16,7 +16,7 @@ Phase 1 establishes a reproducible clinical/FHIR foundation:
 - ED-activity, clinical-activity, and claims-cost marts with a dashboard export contract; and
 - typed laboratory values, a lab-result completeness mart, and a reproduced missing-result incident.
 
-The HAPI FHIR API, live PostgreSQL workflow, and Airflow execution are optional integration paths. The repository already includes controlled file-based HL7 v2 and claims validation, dashboard-ready ED exports, and a temporally correct readmission-cohort export. OMOP and imaging remain later extensions.
+The HAPI FHIR API, live PostgreSQL workflow, and Airflow execution are optional integration paths. The repository already includes controlled HL7 ADT/ORM/ORU persistence, claims adjudication modeling, dashboard-ready exports, and a temporally correct readmission-cohort export. OMOP and imaging remain later extensions.
 
 ## Architecture
 
@@ -52,7 +52,7 @@ See [the architecture](docs/architecture.md), [project charter](docs/project_cha
 Implemented locally:
 
 - FHIR Bundle ingestion with validation, idempotency metadata, quarantine, reference-resolution controls, and core-load SQL;
-- controlled HL7 v2 parsing plus claims CSV validation, raw loading, quarantine, payer/provider dimensions, diagnosis/procedure coding, adjustment lineage, and claim/claim-line modeling;
+- controlled HL7 v2 ADT lifecycle, ORM order, and ORU result persistence plus claims CSV validation, raw loading, quarantine, payer/provider dimensions, diagnosis/procedure coding, adjustment lineage, and claim/claim-line modeling;
 - auditable quality definitions, run history, result evidence, and an Airflow-blocking critical gate;
 - typed FHIR Observation values/UCUM units plus missing-laboratory-result detection and recovery evidence;
 - incremental FHIR API client and PostgreSQL checkpoint design;

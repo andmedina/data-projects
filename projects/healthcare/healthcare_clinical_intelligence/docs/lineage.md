@@ -8,6 +8,8 @@
 
 `Claims CSV line` → versioned `raw.claim_line` → latest `staging.stg_claim_line` → payer/provider dimensions + claim/header detail + diagnosis/procedure/adjustment children → `mart.claim_cost_monthly` → Power BI claims-cost page.
 
+`HL7 ADT / ORM / ORU message` → exact `raw.hl7_message` text → encounter/order/observation events in core → current-state HL7 marts → dashboard HL7-operations datasets.
+
 `operational.pipeline_run` + core quality checks + analytics marts → `dashboard-export` → versioned file contract and refresh manifest.
 
 canonical core/claim/quarantine tables → named checks in `quality.py` → `operational.quality_run` + `operational.quality_result` → Airflow gate + dashboard data-trust page.

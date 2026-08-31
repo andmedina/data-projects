@@ -56,7 +56,10 @@ def main() -> None:
     claims_pipeline.add_argument("--dsn", required=True)
     claims_pipeline.add_argument("--sql-root", type=Path, default=Path("sql"))
     claims_pipeline.add_argument("--source-system", default="synthetic_claims")
-    hl7_postgres = subparsers.add_parser("hl7-postgres", help="Load validated HL7 messages and map OBX observations into PostgreSQL")
+    hl7_postgres = subparsers.add_parser(
+        "hl7-postgres",
+        help="Load controlled HL7 messages and map ADT events, ORM orders, and ORU results",
+    )
     hl7_postgres.add_argument("input", type=Path)
     hl7_postgres.add_argument("--dsn", required=True)
     hl7_postgres.add_argument("--source-system", default="synthetic_hl7")

@@ -265,3 +265,56 @@ create table if not exists core.hl7_observation (
     source_raw_hl7_message_id bigint not null references raw.hl7_message(raw_hl7_message_id),
     unique (message_control_id, obx_set_id)
 );
+
+create table if not exists core.hl7_encounter_event (
+    hl7_encounter_event_id bigint generated always as identity primary key,
+    patient_id text not null references core.patient(patient_id),
+    encounter_id text not null,
+    message_control_id text not null unique,
+    event_code text not null constraint hl7_encounter_event_code_check check (event_code in ('A01', 'A02', 'A03', 'A08')),
+    event_state text not null constraint hl7_encounter_event_state_check check (event_state in ('admitted', 'transferred', 'discharged', 'updated')),
+    patient_class text,
+    assigned_location text,
+    prior_location text,
+    event_at timestamptz not null,
+    source_raw_hl7_message_id bigint not null unique references raw.hl7_message(raw_hl7_message_id)
+);
+
+create table if not exists core.hl7_order_event (
+    hl7_order_event_id bigint generated always as identity primary key,
+    order_id text not null,
+    patient_id text not null references core.patient(patient_id),
+    encounter_id text,
+    message_control_id text not null,
+    order_control text not null constraint hl7_order_control_check check (order_control in ('NW', 'CA', 'DC', 'XO', 'SC')),
+    order_status text,
+    code_system text,
+    code text not null,
+    code_display text,
+    ordered_at timestamptz not null,
+    event_at timestamptz not null,
+    source_raw_hl7_message_id bigint not null references raw.hl7_message(raw_hl7_message_id),
+    unique (message_control_id, order_id)
+);
+
+alter table core.hl7_order_event add column if not exists event_at timestamptz;
+update core.hl7_order_event set event_at = ordered_at where event_at is null;
+alter table core.hl7_order_event alter column event_at set not null;
+
+do $$
+begin
+    if not exists (
+        select 1 from pg_constraint
+        where conname = 'hl7_order_control_check'
+          and conrelid = 'core.hl7_order_event'::regclass
+    ) then
+        alter table core.hl7_order_event
+            add constraint hl7_order_control_check check (order_control in ('NW', 'CA', 'DC', 'XO', 'SC'));
+    end if;
+end $$;
+
+create index if not exists ix_hl7_encounter_event_timeline
+    on core.hl7_encounter_event (encounter_id, event_at);
+
+create index if not exists ix_hl7_order_event_event_timeline
+    on core.hl7_order_event (order_id, event_at);

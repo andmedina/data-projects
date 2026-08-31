@@ -1,6 +1,6 @@
 # Dashboard Data Product
 
-Power BI is the planned dashboard client. The database-backed export command creates one refreshable bundle containing executive, utilization, clinical-activity, claims-cost, laboratory-completeness, quality, and pipeline-operability datasets:
+Power BI is the planned dashboard client. The database-backed export command creates one refreshable bundle containing executive, utilization, clinical-activity, claims-cost, laboratory-completeness, HL7 current-state, quality, and pipeline-operability datasets:
 
 ```bash
 PYTHONPATH=src python -m healthcare_clinical_intelligence.cli dashboard-export \
@@ -18,6 +18,8 @@ The optional model report is validated as JSON and copied into the bundle. `mani
 | `clinical_activity_monthly.csv` | Clinical activity | reporting month |
 | `claim_cost_monthly.csv` | Claims cost | reporting month |
 | `lab_result_completeness_monthly.csv` | Laboratory completeness | reporting month |
+| `hl7_encounter_current_state.csv` | HL7 operations | encounter |
+| `hl7_order_current_state.csv` | HL7 operations | order |
 | `data_quality.csv` | Data trust | latest persisted quality-run control |
 | `pipeline_runs.csv` | Pipeline operations | pipeline run |
 

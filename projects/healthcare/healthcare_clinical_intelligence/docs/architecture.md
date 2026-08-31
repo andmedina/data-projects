@@ -7,8 +7,8 @@
 | Source | Original synthetic healthcare source | generated/Synthea FHIR R4, HAPI FHIR API, controlled claims CSV, HL7 v2 |
 | Raw | Immutable source fidelity and replay | FHIR JSON, claim-line payloads, HL7 message text, source and run metadata |
 | Staging | Parsed, typed, normalized records | patient, encounter, observation, condition, procedure, medication, coverage, latest claims-line views |
-| Core | Canonical healthcare relationships | clinical entities, claim header/detail and dimensions, HL7 observations |
-| Analytics | Purpose-built, documented queries | ED activity, clinical activity, claims-cost, and lab-completeness marts |
+| Core | Canonical healthcare relationships | clinical entities, claim header/detail and dimensions, HL7 encounter/order/result events |
+| Analytics | Purpose-built, documented queries | ED activity, clinical activity, claims-cost, lab-completeness, and HL7 current-state marts |
 | Delivery | Reproducible consumer contracts | dashboard CSV bundle, manifest, validation evidence, model report |
 
 ## Reliability controls
@@ -19,6 +19,7 @@
 - Natural source IDs and payload hashes enable idempotent loads.
 - Staging selects the most recently updated payload for each resource type and source resource ID when multiple source systems provide the same record.
 - Claims staging likewise selects the latest raw version per source-system/line identifier; original and adjustment claim lineage remains queryable in core while analytics select only the current adjudication state.
+- Controlled HL7 messages retain exact source text; canonical event keys make ADT, ORM, and ORU mapping idempotent, and message-to-core reconciliation prevents silent mapping loss.
 - Reconciliation compares source, raw, valid staging, quarantined, core, and mart counts with documented exclusions.
 - Dashboard extracts are rebuilt from PostgreSQL and accompanied by a timestamped row-count manifest.
 - Quality definitions, thresholds, gate runs, and individual results persist in the operational schema; critical failures propagate a nonzero process exit to Airflow.

@@ -12,6 +12,7 @@ Controls are implemented at ingestion, staging, core, and analytics boundaries. 
 | Claims paid/allowed/billed hierarchy | quarantine claim line |
 | Incomplete payer/provider/procedure/adjustment fields | quarantine claim line |
 | Invalid replacement/void original-claim reference | fail the persistent gate |
+| Invalid ADT lifecycle or unmapped accepted HL7 message | fail the persistent gate |
 
 ## Persistent gate
 
@@ -27,6 +28,9 @@ Default error-severity checks enforce:
 - exact claim-line summary-to-adjustment-detail reconciliation;
 - replacement/void claim-to-original integrity;
 - cross-line agreement for repeated claim-header attributes;
+- controlled ADT lifecycle validity;
+- accepted HL7 message-to-canonical reconciliation;
+- mapped ORM service-code completeness;
 - final laboratory result or documented absent-reason completeness; and
 - final laboratory effective-time completeness.
 

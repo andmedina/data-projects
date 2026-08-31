@@ -39,3 +39,9 @@ def test_expanded_claim_controls_are_registered() -> None:
     assert "adjusted_claims_missing_original" in QUALITY_CHECK_QUERIES
     assert "claim_line_adjustment_mismatches" in QUALITY_CHECK_QUERIES
     assert "inconsistent_claim_header_attributes" in QUALITY_CHECK_QUERIES
+
+
+def test_hl7_lifecycle_controls_are_registered() -> None:
+    assert "invalid_hl7_encounter_transitions" in QUALITY_CHECK_QUERIES
+    assert "hl7_orders_missing_code" in QUALITY_CHECK_QUERIES
+    assert "unmapped_hl7_messages" in QUALITY_CHECK_QUERIES

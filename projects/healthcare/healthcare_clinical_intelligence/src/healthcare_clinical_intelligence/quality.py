@@ -72,6 +72,42 @@ QUALITY_CHECK_QUERIES = {
                 or count(distinct coalesce(diagnosis_codes, '')) > 1
         ) inconsistent_claims
     """,
+    "invalid_hl7_encounter_transitions": """
+        select count(*) from (
+            select event_code,
+                   lag(event_code) over (
+                       partition by encounter_id
+                       order by event_at, hl7_encounter_event_id
+                   ) as previous_event_code
+            from core.hl7_encounter_event
+        ) timeline
+        where (event_code = 'A01' and previous_event_code is not null)
+           or (event_code in ('A02', 'A03', 'A08')
+               and coalesce(previous_event_code, '') not in ('A01', 'A02', 'A08'))
+           or previous_event_code = 'A03'
+    """,
+    "hl7_orders_missing_code": """
+        select count(*) from core.hl7_order_event
+        where nullif(btrim(code), '') is null
+    """,
+    "unmapped_hl7_messages": """
+        select count(*) from raw.hl7_message message
+        where (message.message_type like 'ADT^%'
+               and not exists (
+                   select 1 from core.hl7_encounter_event event
+                   where event.message_control_id = message.message_control_id
+               ))
+           or (message.message_type = 'ORM^O01'
+               and not exists (
+                   select 1 from core.hl7_order_event order_event
+                   where order_event.message_control_id = message.message_control_id
+               ))
+           or (message.message_type = 'ORU^R01'
+               and not exists (
+                   select 1 from core.hl7_observation observation
+                   where observation.message_control_id = message.message_control_id
+               ))
+    """,
     "final_laboratory_observations_missing_result": """
         select count(*) from core.observation
         where category_code = 'laboratory'

@@ -63,6 +63,14 @@ The replacement claim `c-101` resolved to original `c-100`. The adjudication-awa
 
 The synthetic ORU^R01 fixture loaded one raw HL7 message and mapped its OBX result to `core.hl7_observation` for patient `p-001`. The mapped result retained the message control ID `MSG0002`, LOINC code `8310-5`, value `37.1`, unit `Cel`, and final status `F`. A rerun loaded zero new messages and zero new observations, confirming message-hash and OBX-key idempotency.
 
+## HL7 ADT lifecycle and ORM orders
+
+On August 31, 2026, the three-message ADT fixture loaded admit, transfer, and discharge events for synthetic encounter `hl7-visit-001` with zero rejects. The derived current state was `discharged` at `WARD^202^1`, with an admitted timestamp of February 1 at 10:00 UTC, discharge on February 2 at 10:00 UTC, and three retained lifecycle events. The original single A01 fixture also backfilled one admitted event for encounter `e-001` from retained/raw-compatible input.
+
+The ORM^O01 fixture loaded one order event for `order-001`, patient `p-001`, encounter `e-001`, control `NW`, status `SC`, and CPT `71046` Chest radiograph at January 3 11:15 UTC. Identical ADT and ORM reruns loaded zero raw messages, identified three and one duplicates respectively, and inserted zero new canonical events.
+
+The expanded quality gate evaluated 16 controls: 15 passed, the deliberate FHIR quarantine-volume control warned, and no result was blocking. ADT transition validity, ORM code completeness, and accepted-message-to-core reconciliation each observed zero violations. Both new current-state datasets exported successfully with the dashboard bundle.
+
 ## Readmission baseline and claims mart
 
 A deterministic 250-patient synthetic FHIR Bundle produced 170 temporally valid index encounters, including 51 30-day readmission outcomes. A chronological logistic-regression baseline trained on pre-discharge encounter history, prior ED use, and age at prediction. Its holdout set contained 34 rows, with ROC-AUC 0.5889 and PR-AUC 0.3504. These metrics are synthetic-data engineering evidence only and are not clinically meaningful.

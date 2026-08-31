@@ -22,10 +22,14 @@
 | `core.claim_line_procedure` | one coded procedure on a claim line | `claim_line_id` + `code_system` + `code` |
 | `core.claim_line_adjustment` | one reason-coded financial adjustment on a claim line | `claim_line_id` + group + reason |
 | `core.hl7_observation` | one OBX result per HL7 message | `hl7_observation_id` |
+| `core.hl7_encounter_event` | one controlled ADT lifecycle event | `hl7_encounter_event_id` |
+| `core.hl7_order_event` | one order event per ORM message/order | `hl7_order_event_id` |
 | `mart.ed_utilization_monthly` | reporting month | `reporting_month` |
 | `mart.clinical_activity_monthly` | reporting month | `reporting_month` |
 | `mart.claim_cost_monthly` | reporting month | `reporting_month` |
 | `mart.lab_result_completeness_monthly` | laboratory result month | `reporting_month` |
+| `mart.hl7_encounter_current_state` | one latest state per HL7 encounter | `encounter_id` |
+| `mart.hl7_order_current_state` | one latest event per HL7 order | `order_id` |
 
 `core.observation` retains source category and code, effective time, explicit value type, separate numeric/text/boolean/coded value fields, Quantity unit/system/code, documented absent reason, and the raw source-version key. Typed fields must not be coalesced when validating result completeness.
 

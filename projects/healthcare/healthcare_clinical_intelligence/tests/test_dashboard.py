@@ -53,3 +53,9 @@ def test_dashboard_claim_queries_use_current_adjudication_state() -> None:
     assert "successor.original_claim_id = claim.claim_id" in EXPORT_QUERIES["executive_overview"]
     assert "patient_responsibility_amount" in EXPORT_QUERIES["claim_cost_monthly"]
     assert "adjustment_amount" in EXPORT_QUERIES["claim_cost_monthly"]
+
+
+def test_dashboard_includes_hl7_current_state_contracts() -> None:
+    assert "hl7_encounter_current_state" in EXPORT_QUERIES
+    assert "hl7_order_current_state" in EXPORT_QUERIES
+    assert "latest_event_at" in EXPORT_QUERIES["hl7_order_current_state"]

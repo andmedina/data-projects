@@ -13,6 +13,7 @@ Implemented ticket evidence:
 - `DE-005` Persistent clinical data-quality controls and Airflow gate
 - `DE-006` Missing laboratory-result incident, typed Observation remediation, and prevention controls
 - `DE-007` Claims payer/provider/code dimensions, adjustment lineage, and current-adjudication reporting
+- `DE-008` HL7 ADT lifecycle, ORM order persistence, current-state marts, and reconciliation controls
 - `DA-001` Emergency-department activity mart, independent validation, and stakeholder interpretation
 - `DS-001` Temporally valid 30-day readmission baseline
 

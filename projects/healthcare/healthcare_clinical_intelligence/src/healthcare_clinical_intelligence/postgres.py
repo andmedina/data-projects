@@ -226,10 +226,20 @@ def run_claims_database_pipeline(connection: Any, input_path: Path, sql_root: Pa
 
 
 def load_hl7_file(connection: Any, input_path: Path, source_system: str = "synthetic_hl7") -> dict[str, int | str]:
-    """Persist valid HL7 messages and map OBX results for known core patients."""
+    """Persist controlled HL7 messages and map ADT, ORM, and ORU events."""
     run_id = str(uuid.uuid4())
     messages = [part for part in input_path.read_text().strip().split("\n\n") if part.strip()]
-    report: dict[str, int | str] = {"run_id": run_id, "source_messages": len(messages), "loaded": 0, "duplicates": 0, "rejected": 0, "observations_loaded": 0}
+    report: dict[str, int | str] = {
+        "run_id": run_id,
+        "source_messages": len(messages),
+        "loaded": 0,
+        "duplicates": 0,
+        "rejected": 0,
+        "mapping_rejected": 0,
+        "encounter_events_loaded": 0,
+        "orders_loaded": 0,
+        "observations_loaded": 0,
+    }
     with connection.cursor() as cursor:
         cursor.execute(
             "insert into operational.pipeline_run (run_id, pipeline_name, status, source_description) values (%s,%s,'running',%s)",
@@ -258,20 +268,137 @@ def load_hl7_file(connection: Any, input_path: Path, source_system: str = "synth
             raw_row = cursor.fetchone()
             if not raw_row:
                 report["duplicates"] += 1
+                cursor.execute(
+                    "select raw_hl7_message_id from raw.hl7_message where payload_sha256=%s",
+                    (digest,),
+                )
+                raw_id = cursor.fetchone()[0]
+            else:
+                raw_id = raw_row[0]
+                report["loaded"] += 1
+
+            cursor.execute(
+                "select exists (select 1 from core.patient where patient_id=%s)",
+                (parsed["patient_id"],),
+            )
+            if not cursor.fetchone()[0]:
+                cursor.execute(
+                    """insert into quarantine.hl7_message
+                    (run_id, source_system, message_control_id, message_text, reason_code, reason_detail)
+                    values (%s,%s,%s,%s,'UNRESOLVED_PATIENT_REFERENCE',%s)
+                    on conflict do nothing""",
+                    (
+                        run_id,
+                        source_system,
+                        control_id,
+                        message,
+                        f"Patient {parsed['patient_id']} is not present in core.patient",
+                    ),
+                )
+                report["mapping_rejected"] += 1
                 continue
-            raw_id = raw_row[0]
-            report["loaded"] += 1
+
+            encounter_event = parsed["encounter_event"]
+            if encounter_event:
+                cursor.execute(
+                    """insert into core.hl7_encounter_event
+                    (patient_id, encounter_id, message_control_id, event_code, event_state,
+                     patient_class, assigned_location, prior_location, event_at,
+                     source_raw_hl7_message_id)
+                    values (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)
+                    on conflict (message_control_id) do nothing
+                    returning hl7_encounter_event_id""",
+                    (
+                        parsed["patient_id"],
+                        encounter_event["encounter_id"],
+                        control_id,
+                        encounter_event["event_code"],
+                        encounter_event["event_state"],
+                        encounter_event["patient_class"],
+                        encounter_event["assigned_location"],
+                        encounter_event["prior_location"],
+                        encounter_event["event_at"],
+                        raw_id,
+                    ),
+                )
+                if cursor.fetchone():
+                    report["encounter_events_loaded"] += 1
+
+            for order in parsed["orders"]:
+                cursor.execute(
+                    """insert into core.hl7_order_event
+                    (order_id, patient_id, encounter_id, message_control_id, order_control,
+                     order_status, code_system, code, code_display, ordered_at, event_at,
+                     source_raw_hl7_message_id)
+                    values (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)
+                    on conflict (message_control_id, order_id) do nothing
+                    returning hl7_order_event_id""",
+                    (
+                        order["order_id"],
+                        parsed["patient_id"],
+                        order["encounter_id"],
+                        control_id,
+                        order["order_control"],
+                        order["order_status"],
+                        order["code_system"],
+                        order["code"],
+                        order["code_display"],
+                        order["ordered_at"],
+                        parsed["message_event_at"],
+                        raw_id,
+                    ),
+                )
+                order_row = cursor.fetchone()
+                if order_row:
+                    report["orders_loaded"] += 1
+                else:
+                    cursor.execute(
+                        """update core.hl7_order_event
+                        set order_control=%s,
+                            order_status=%s,
+                            code_system=%s,
+                            code=%s,
+                            code_display=%s,
+                            ordered_at=%s,
+                            event_at=%s
+                        where message_control_id=%s and order_id=%s""",
+                        (
+                            order["order_control"],
+                            order["order_status"],
+                            order["code_system"],
+                            order["code"],
+                            order["code_display"],
+                            order["ordered_at"],
+                            parsed["message_event_at"],
+                            control_id,
+                            order["order_id"],
+                        ),
+                    )
+
             for observation in parsed["observations"]:
                 cursor.execute(
                     """insert into core.hl7_observation
                     (patient_id, message_control_id, obx_set_id, value_type, code, value, units, result_status, source_raw_hl7_message_id)
-                    select %s,%s,%s,%s,%s,%s,%s,%s,%s
-                    where exists (select 1 from core.patient where patient_id=%s)
+                    values (%s,%s,%s,%s,%s,%s,%s,%s,%s)
                     on conflict (message_control_id, obx_set_id) do nothing returning hl7_observation_id""",
-                    (parsed["patient_id"], control_id, observation["set_id"], observation["value_type"], observation["code"], observation["value"], observation["units"], observation["status"], raw_id, parsed["patient_id"]),
+                    (
+                        parsed["patient_id"],
+                        control_id,
+                        observation["set_id"],
+                        observation["value_type"],
+                        observation["code"],
+                        observation["value"],
+                        observation["units"],
+                        observation["status"],
+                        raw_id,
+                    ),
                 )
                 if cursor.fetchone():
                     report["observations_loaded"] += 1
-        cursor.execute("update operational.pipeline_run set status=%s, completed_at=current_timestamp where run_id=%s", ("partial" if report["rejected"] else "succeeded", run_id))
+        has_rejections = bool(report["rejected"] or report["mapping_rejected"])
+        cursor.execute(
+            "update operational.pipeline_run set status=%s, completed_at=current_timestamp where run_id=%s",
+            ("partial" if has_rejections else "succeeded", run_id),
+        )
     connection.commit()
     return report

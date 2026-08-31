@@ -41,10 +41,19 @@ It returns ingestion counts and core-model quality results. A healthy sample run
 PYTHONPATH=src python -m healthcare_clinical_intelligence.cli hl7-file data/samples/adt_a01.hl7 --output output/hl7
 PYTHONPATH=src python -m healthcare_clinical_intelligence.cli claims-file data/samples/claims.csv --output output/claims
 PYTHONPATH=src python -m healthcare_clinical_intelligence.cli claims-file data/samples/claims_expanded.csv --output output/claims-expanded
+```
+
+These validate and quarantine controlled synthetic inputs; claims and each supported HL7 profile also have canonical PostgreSQL paths. They do not replace certified HL7/X12 implementations.
+
+Load each controlled HL7 profile after patient `p-001` exists in core:
+
+```bash
+PYTHONPATH=src python -m healthcare_clinical_intelligence.cli hl7-postgres data/samples/adt_lifecycle.hl7 --dsn "postgresql://healthcare_app:change-me@localhost:55432/healthcare_clinical_intelligence"
+PYTHONPATH=src python -m healthcare_clinical_intelligence.cli hl7-postgres data/samples/orm_o01.hl7 --dsn "postgresql://healthcare_app:change-me@localhost:55432/healthcare_clinical_intelligence"
 PYTHONPATH=src python -m healthcare_clinical_intelligence.cli hl7-postgres data/samples/oru_r01.hl7 --dsn "postgresql://healthcare_app:change-me@localhost:55432/healthcare_clinical_intelligence"
 ```
 
-These validate and quarantine controlled synthetic inputs; claims and ORU results also have canonical PostgreSQL paths. They do not replace certified HL7/X12 implementations.
+The lifecycle load should add three encounter events, the ORM load one order event, and the ORU load one observation when starting from an empty HL7 store. Identical reruns must report only raw duplicates and zero newly mapped canonical events. Run the quality gate and `tickets/DE-008_hl7_lifecycle_orders/validation.sql` before using the current-state marts.
 
 After the FHIR sample has created patient `p-001`, run the expanded claims database path and its quality gate:
 
