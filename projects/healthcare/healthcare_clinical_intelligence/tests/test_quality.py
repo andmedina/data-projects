@@ -65,3 +65,10 @@ def test_imaging_metadata_controls_are_registered() -> None:
     assert "imaging_study_series_mismatches" in QUALITY_CHECK_QUERIES
     assert "imaging_study_instance_mismatches" in QUALITY_CHECK_QUERIES
     assert "imaging_series_missing_modality" in QUALITY_CHECK_QUERIES
+
+
+def test_operational_reliability_controls_are_registered() -> None:
+    assert "stale_pipeline_runs" in QUALITY_CHECK_QUERIES
+    assert "completed_pipeline_runs_missing_completion" in QUALITY_CHECK_QUERIES
+    assert "pipeline_run_count_mismatches" in QUALITY_CHECK_QUERIES
+    assert "operational.pipeline_run_health" in QUALITY_CHECK_QUERIES["stale_pipeline_runs"]

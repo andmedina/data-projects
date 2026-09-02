@@ -7,13 +7,32 @@ from datetime import date
 from typing import Any
 
 SUPPORTED_RESOURCES = {
-    "Patient", "Encounter", "Observation", "Condition", "Procedure",
-    "MedicationRequest", "Practitioner", "Organization", "Coverage",
+    "Patient",
+    "Encounter",
+    "Observation",
+    "Condition",
+    "Procedure",
+    "MedicationRequest",
+    "Practitioner",
+    "Organization",
+    "Coverage",
     "ImagingStudy",
 }
-PATIENT_SCOPED_RESOURCES = {"Encounter", "Observation", "Condition", "Procedure", "MedicationRequest", "Coverage", "ImagingStudy"}
+PATIENT_SCOPED_RESOURCES = {
+    "Encounter",
+    "Observation",
+    "Condition",
+    "Procedure",
+    "MedicationRequest",
+    "Coverage",
+    "ImagingStudy",
+}
 OBSERVATION_VALUE_KEYS = {
-    "valueQuantity", "valueString", "valueBoolean", "valueInteger", "valueCodeableConcept",
+    "valueQuantity",
+    "valueString",
+    "valueBoolean",
+    "valueInteger",
+    "valueCodeableConcept",
 }
 
 
@@ -43,7 +62,11 @@ def first_coding(concept: dict[str, Any] | None) -> dict[str, str | None]:
     if not coding:
         return {"system": None, "code": None, "display": (concept or {}).get("text")}
     item = coding[0]
-    return {"system": item.get("system"), "code": item.get("code"), "display": item.get("display") or (concept or {}).get("text")}
+    return {
+        "system": item.get("system"),
+        "code": item.get("code"),
+        "display": item.get("display") or (concept or {}).get("text"),
+    }
 
 
 def validate_resource(resource: dict[str, Any]) -> list[str]:
@@ -54,7 +77,9 @@ def validate_resource(resource: dict[str, Any]) -> list[str]:
         return errors
     if not resource.get("id"):
         errors.append("MISSING_RESOURCE_ID")
-    if resource_type in PATIENT_SCOPED_RESOURCES and not (resource.get("subject") or resource.get("beneficiary") or {}).get("reference"):
+    if resource_type in PATIENT_SCOPED_RESOURCES and not (
+        resource.get("subject") or resource.get("beneficiary") or {}
+    ).get("reference"):
         errors.append(f"MISSING_{resource_type.upper()}_SUBJECT")
     if resource_type == "Observation":
         if not resource.get("status"):
@@ -72,7 +97,9 @@ def validate_resource(resource: dict[str, Any]) -> list[str]:
             if not isinstance(quantity, dict):
                 errors.append("INVALID_OBSERVATION_QUANTITY")
             quantity_value = quantity.get("value") if isinstance(quantity, dict) else None
-            if quantity_value is not None and (isinstance(quantity_value, bool) or not isinstance(quantity_value, (int, float))):
+            if quantity_value is not None and (
+                isinstance(quantity_value, bool) or not isinstance(quantity_value, (int, float))
+            ):
                 errors.append("INVALID_OBSERVATION_QUANTITY_VALUE")
     if resource_type == "Coverage":
         period_payload = resource.get("period")
@@ -133,7 +160,10 @@ def normalize_resource(resource: dict[str, Any]) -> dict[str, Any]:
             "end_at": period.get("end"),
         }
     if resource_type == "Organization":
-        return base | {"name": resource.get("name"), "organization_type": first_coding((resource.get("type") or [{}])[0])}
+        return base | {
+            "name": resource.get("name"),
+            "organization_type": first_coding((resource.get("type") or [{}])[0]),
+        }
     if resource_type == "Practitioner":
         name = (resource.get("name") or [{}])[0]
         return base | {"name": " ".join(part for part in [name.get("given", [None])[0], name.get("family")] if part)}
@@ -192,7 +222,9 @@ def normalize_resource(resource: dict[str, Any]) -> dict[str, Any]:
             "encounter_id": reference_id((resource.get("encounter") or {}).get("reference")),
             "status": resource.get("clinicalStatus", {}).get("coding", [{}])[0].get("code") or resource.get("status"),
             "code": first_coding(concept),
-            "recorded_at": resource.get("recordedDate") or resource.get("performedDateTime") or resource.get("authoredOn"),
+            "recorded_at": resource.get("recordedDate")
+            or resource.get("performedDateTime")
+            or resource.get("authoredOn"),
         }
     value_keys = OBSERVATION_VALUE_KEYS.intersection(resource)
     value_key = next(iter(value_keys), None)

@@ -2,6 +2,18 @@
 
 The Docker-based Phase 1 workflow was executed locally against PostgreSQL and Airflow.
 
+## Platform reliability release gate
+
+On September 2, 2026, the production-hardening gate ran against PostgreSQL 16 in an isolated `hci_smoke_<random>` database. Ruff lint and format checks passed, mypy reported no issues across 16 source/script files, 64 tests passed, and branch coverage was 60.47% against a 60% non-regression floor.
+
+The first expanded schema bundle applied in 264.176 ms and recorded its SHA-256; an identical second application returned `already_current`. The database path processed 621 generated FHIR resources, three expanded claims lines, and five ADT/ORM/ORU messages. It also built and exported the governed synthetic readmission artifacts. All ingestion domains were rerun, and every rerun inserted zero new raw rows.
+
+The final persistent gate evaluated 29 controls: 27 passed, two expected warnings remained for the deliberate FHIR quarantine fixture and unresolved governed OMOP terminology mappings, and no result was blocking. Runtime health reported zero running or stale pipelines, missing completion timestamps, or count mismatches.
+
+Dashboard contract `1.0.0` independently validated all 18 datasets and their headers, row counts, byte counts, and SHA-256 checksums. Five representative PostgreSQL `EXPLAIN ANALYZE` benchmarks passed the smoke threshold, and every required operational/raw/clinical index was present. The runner then removed the exact temporary database, leaving the shared development database unchanged. Detailed evidence is in `tickets/DE-011_platform_reliability/validation.md`.
+
+The same migration was then applied to the retained local development database. Its 29-control gate produced 27 passes, the same two expected warnings, zero failures, and zero blocking results. Operations reported zero running, stale, failed, missing-completion, or count-mismatch rows. All 12 required indexes were present; the slowest of five representative queries was OMOP reconciliation at 9.041 ms. The refreshed governed-model dashboard bundle contained 18 datasets and passed independent contract validation with no errors.
+
 ## PostgreSQL FHIR pipeline
 
 The sample FHIR Bundle produced:

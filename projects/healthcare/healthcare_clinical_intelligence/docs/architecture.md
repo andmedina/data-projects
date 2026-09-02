@@ -15,7 +15,7 @@
 ## Reliability controls
 
 - Raw records retain the original JSON payload and a source identifier.
-- Each run has a run ID, timestamps, counts, and outcome status.
+- Each run has a durable run ID, timestamps, source/loaded/duplicate/rejected counts, structured details, and outcome status. Exceptions roll back partial data and retain a terminal failure record.
 - Validation failures are written to a quarantine table with a reason code; they are never silently dropped.
 - Natural source IDs and payload hashes enable idempotent loads.
 - Staging selects the most recently updated payload for each resource type and source resource ID when multiple source systems provide the same record.
@@ -23,10 +23,12 @@
 - Active Coverage periods expand to a distinct patient/payer/month grain before aggregation, preventing duplicate member-month denominators.
 - Controlled HL7 messages retain exact source text; canonical event keys make ADT, ORM, and ORU mapping idempotent, and message-to-core reconciliation prevents silent mapping loss.
 - Reconciliation compares source, raw, valid staging, quarantined, core, and mart counts with documented exclusions.
-- Dashboard extracts are rebuilt from PostgreSQL and accompanied by a timestamped row-count manifest.
+- Dashboard extracts are rebuilt from PostgreSQL and accompanied by a versioned manifest containing columns, row counts, byte counts, and SHA-256 checksums.
 - Quality definitions, thresholds, gate runs, and individual results persist in the operational schema; critical failures propagate a nonzero process exit to Airflow.
 - Model runs retain deterministic experiment identity, holdout predictions, calibration/subgroup evidence, an idempotent registry, a model card, and a non-clinical technical approval result.
 - OMOP-compatible views reconcile qualified canonical rows, preserve stable source-to-integer ID mappings, and warn on every source terminology group that lacks governed Standard Concept mapping.
+- Schema changes are applied idempotently and recorded with their expanded-SQL checksum, execution time, and application count.
+- CI provisions a clean PostgreSQL service, runs the complete synthetic domain path twice, and fails on migration drift, blocking quality results, contract corruption, missing indexes, slow smoke queries, or non-idempotent loads.
 
 ## FHIR mapping principles
 

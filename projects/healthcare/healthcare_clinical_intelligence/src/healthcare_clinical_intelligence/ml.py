@@ -33,27 +33,37 @@ def build_readmission_cohort(accepted_path: Path) -> list[dict[str, Any]]:
             outcome_end = prediction_at + timedelta(days=30)
             future_inpatient = any(
                 later.get("encounter_class") == "IMP" and prediction_at < _parse_time(later["start_at"]) <= outcome_end
-                for later in encounters[index + 1:]
+                for later in encounters[index + 1 :]
             )
             history = [prior for prior in encounters[:index] if _parse_time(prior["end_at"]) <= prediction_at]
             birth_date = patients.get(patient_id, {}).get("birth_date")
             age = prediction_at.date().year - date.fromisoformat(birth_date).year if birth_date else None
-            cohort.append({
-                "index_encounter_id": encounter["source_resource_id"],
-                "patient_id": patient_id,
-                "prediction_at": encounter["end_at"],
-                "prior_encounter_count": len(history),
-                "prior_ed_count": sum(item.get("encounter_class") == "EMER" for item in history),
-                "age_at_prediction": age,
-                "readmitted_within_30_days": int(future_inpatient),
-            })
+            cohort.append(
+                {
+                    "index_encounter_id": encounter["source_resource_id"],
+                    "patient_id": patient_id,
+                    "prediction_at": encounter["end_at"],
+                    "prior_encounter_count": len(history),
+                    "prior_ed_count": sum(item.get("encounter_class") == "EMER" for item in history),
+                    "age_at_prediction": age,
+                    "readmitted_within_30_days": int(future_inpatient),
+                }
+            )
     return cohort
 
 
 def export_readmission_cohort(accepted_path: Path, output_path: Path) -> list[dict[str, Any]]:
     rows = build_readmission_cohort(accepted_path)
     output_path.parent.mkdir(parents=True, exist_ok=True)
-    fields = ["index_encounter_id", "patient_id", "prediction_at", "prior_encounter_count", "prior_ed_count", "age_at_prediction", "readmitted_within_30_days"]
+    fields = [
+        "index_encounter_id",
+        "patient_id",
+        "prediction_at",
+        "prior_encounter_count",
+        "prior_ed_count",
+        "age_at_prediction",
+        "readmitted_within_30_days",
+    ]
     with output_path.open("w", newline="") as handle:
         writer = csv.DictWriter(handle, fieldnames=fields)
         writer.writeheader()

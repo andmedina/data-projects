@@ -53,7 +53,9 @@ def iter_resources_from_payload(payload: dict[str, Any]) -> Iterator[dict[str, A
         yield payload
 
 
-def paginated_bundles(initial_url: str, fetcher: Callable[[str], dict[str, Any]] = fetch_json) -> Iterator[dict[str, Any]]:
+def paginated_bundles(
+    initial_url: str, fetcher: Callable[[str], dict[str, Any]] = fetch_json
+) -> Iterator[dict[str, Any]]:
     """Yield every Bundle, following only FHIR ``next`` links."""
     next_url: str | None = initial_url
     visited: set[str] = set()
@@ -68,8 +70,7 @@ def paginated_bundles(initial_url: str, fetcher: Callable[[str], dict[str, Any]]
 
 def latest_last_updated(bundle: dict[str, Any]) -> str | None:
     timestamps = [
-        (entry.get("resource", {}).get("meta", {}) or {}).get("lastUpdated")
-        for entry in bundle.get("entry", [])
+        (entry.get("resource", {}).get("meta", {}) or {}).get("lastUpdated") for entry in bundle.get("entry", [])
     ]
     return max((timestamp for timestamp in timestamps if timestamp), default=None)
 

@@ -12,7 +12,9 @@
 
 `HL7 ADT / ORM / ORU message` → exact `raw.hl7_message` text → encounter/order/observation events in core → current-state HL7 marts → dashboard HL7-operations datasets.
 
-`operational.pipeline_run` + core quality checks + analytics marts → `dashboard-export` → versioned file contract and refresh manifest.
+`operational.pipeline_run` + core quality checks + analytics marts → `dashboard-export` → versioned file contract with row/header/size/SHA-256 evidence → independent `dashboard-validate` result.
+
+Expanded `sql/000_init.sql` include graph → SHA-256 and transactional schema application → `operational.schema_migration` history → CI idempotency evidence.
 
 Synthetic FHIR encounters → accepted canonical file records → readmission cohort → strict patient/time split → holdout predictions + governed model report + registry/model card → dashboard model-governance datasets.
 

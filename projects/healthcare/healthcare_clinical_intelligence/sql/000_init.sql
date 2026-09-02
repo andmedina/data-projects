@@ -8,6 +8,7 @@
 \ir operational/006_quality_framework.sql
 \ir staging/010_staging_views.sql
 \ir core/020_core_schema.sql
+\ir operational/007_runtime_observability.sql
 \ir marts/030_ed_utilization.sql
 \ir marts/031_claims_cost.sql
 \ir marts/032_clinical_activity.sql

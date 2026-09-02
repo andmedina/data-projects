@@ -11,41 +11,60 @@ def generate_fhir_bundle(patient_count: int = 25, seed: int = 42) -> dict[str, A
     rng = random.Random(seed)
     resources: list[dict[str, Any]] = []
     start = datetime(2025, 1, 1, tzinfo=timezone.utc)
-    resources.extend([
-        {
-            "resourceType": "Organization", "id": "synthetic-org-001", "name": "Synthetic Community Hospital",
-            "type": [{"coding": [{"system": "http://terminology.hl7.org/CodeSystem/organization-type", "code": "prov"}]}],
-            "meta": {"lastUpdated": start.isoformat().replace("+00:00", "Z")},
-        },
-        {
-            "resourceType": "Practitioner", "id": "synthetic-practitioner-001",
-            "name": [{"given": ["Avery"], "family": "Morgan"}],
-            "meta": {"lastUpdated": start.isoformat().replace("+00:00", "Z")},
-        },
-        {
-            "resourceType": "Organization", "id": "synthetic-payer-001", "name": "Synthetic Community Health Plan",
-            "type": [{"coding": [{"system": "http://terminology.hl7.org/CodeSystem/organization-type", "code": "ins"}]}],
-            "meta": {"lastUpdated": start.isoformat().replace("+00:00", "Z")},
-        },
-    ])
+    resources.extend(
+        [
+            {
+                "resourceType": "Organization",
+                "id": "synthetic-org-001",
+                "name": "Synthetic Community Hospital",
+                "type": [
+                    {"coding": [{"system": "http://terminology.hl7.org/CodeSystem/organization-type", "code": "prov"}]}
+                ],
+                "meta": {"lastUpdated": start.isoformat().replace("+00:00", "Z")},
+            },
+            {
+                "resourceType": "Practitioner",
+                "id": "synthetic-practitioner-001",
+                "name": [{"given": ["Avery"], "family": "Morgan"}],
+                "meta": {"lastUpdated": start.isoformat().replace("+00:00", "Z")},
+            },
+            {
+                "resourceType": "Organization",
+                "id": "synthetic-payer-001",
+                "name": "Synthetic Community Health Plan",
+                "type": [
+                    {"coding": [{"system": "http://terminology.hl7.org/CodeSystem/organization-type", "code": "ins"}]}
+                ],
+                "meta": {"lastUpdated": start.isoformat().replace("+00:00", "Z")},
+            },
+        ]
+    )
     for patient_number in range(1, patient_count + 1):
         patient_id = f"synthetic-p-{patient_number:05d}"
         birth_year = rng.randint(1940, 2010)
-        resources.append({
-            "resourceType": "Patient", "id": patient_id,
-            "gender": rng.choice(["female", "male", "other"]),
-            "birthDate": date(birth_year, rng.randint(1, 12), rng.randint(1, 28)).isoformat(),
-            "meta": {"lastUpdated": start.isoformat().replace("+00:00", "Z")},
-        })
-        resources.append({
-            "resourceType": "Coverage", "id": f"synthetic-cov-{patient_number:05d}", "status": "active",
-            "beneficiary": {"reference": f"Patient/{patient_id}"}, "payor": [{"reference": "Organization/synthetic-payer-001"}],
-            "period": {
-                "start": date(2025, 1 + patient_number % 3, 1).isoformat(),
-                "end": date(2025, 12 - patient_number % 4, 28).isoformat(),
-            },
-            "meta": {"lastUpdated": start.isoformat().replace("+00:00", "Z")},
-        })
+        resources.append(
+            {
+                "resourceType": "Patient",
+                "id": patient_id,
+                "gender": rng.choice(["female", "male", "other"]),
+                "birthDate": date(birth_year, rng.randint(1, 12), rng.randint(1, 28)).isoformat(),
+                "meta": {"lastUpdated": start.isoformat().replace("+00:00", "Z")},
+            }
+        )
+        resources.append(
+            {
+                "resourceType": "Coverage",
+                "id": f"synthetic-cov-{patient_number:05d}",
+                "status": "active",
+                "beneficiary": {"reference": f"Patient/{patient_id}"},
+                "payor": [{"reference": "Organization/synthetic-payer-001"}],
+                "period": {
+                    "start": date(2025, 1 + patient_number % 3, 1).isoformat(),
+                    "end": date(2025, 12 - patient_number % 4, 28).isoformat(),
+                },
+                "meta": {"lastUpdated": start.isoformat().replace("+00:00", "Z")},
+            }
+        )
         index_discharge: datetime | None = None
         imaging_encounter_id: str | None = None
         imaging_started: datetime | None = None
@@ -53,50 +72,102 @@ def generate_fhir_bundle(patient_count: int = 25, seed: int = 42) -> dict[str, A
             encounter_id = f"synthetic-e-{patient_number:05d}-{encounter_number:02d}"
             encounter_start = start + timedelta(days=rng.randint(0, 364), hours=rng.randint(0, 23))
             encounter_end = encounter_start + timedelta(hours=rng.randint(1, 12))
-            encounter_class = "IMP" if patient_number % 5 == 0 and encounter_number == 0 else rng.choices(["EMER", "AMB", "IMP"], weights=[25, 60, 15])[0]
-            resources.append({
-                "resourceType": "Encounter", "id": encounter_id, "status": "finished",
-                "class": {"code": encounter_class}, "subject": {"reference": f"Patient/{patient_id}"},
-                "period": {"start": encounter_start.isoformat().replace("+00:00", "Z"), "end": encounter_end.isoformat().replace("+00:00", "Z")},
-                "meta": {"lastUpdated": encounter_end.isoformat().replace("+00:00", "Z")},
-            })
-            resources.extend([
+            encounter_class = (
+                "IMP"
+                if patient_number % 5 == 0 and encounter_number == 0
+                else rng.choices(["EMER", "AMB", "IMP"], weights=[25, 60, 15])[0]
+            )
+            resources.append(
                 {
-                    "resourceType": "Condition", "id": f"synthetic-c-{patient_number:05d}-{encounter_number:02d}",
-                    "subject": {"reference": f"Patient/{patient_id}"}, "encounter": {"reference": f"Encounter/{encounter_id}"},
-                    "clinicalStatus": {"coding": [{"code": "active"}]},
-                    "code": {"coding": [{"system": "http://hl7.org/fhir/sid/icd-10-cm", "code": rng.choice(["I10", "E11.9", "J06.9"])}]},
-                    "recordedDate": encounter_start.isoformat().replace("+00:00", "Z"),
-                    "meta": {"lastUpdated": encounter_end.isoformat().replace("+00:00", "Z")},
-                },
-                {
-                    "resourceType": "Procedure", "id": f"synthetic-pr-{patient_number:05d}-{encounter_number:02d}", "status": "completed",
-                    "subject": {"reference": f"Patient/{patient_id}"}, "encounter": {"reference": f"Encounter/{encounter_id}"},
-                    "code": {"coding": [{"system": "http://www.ama-assn.org/go/cpt", "code": "99213"}]},
-                    "performedDateTime": encounter_start.isoformat().replace("+00:00", "Z"),
-                    "meta": {"lastUpdated": encounter_end.isoformat().replace("+00:00", "Z")},
-                },
-                {
-                    "resourceType": "MedicationRequest", "id": f"synthetic-m-{patient_number:05d}-{encounter_number:02d}", "status": "active",
-                    "subject": {"reference": f"Patient/{patient_id}"}, "encounter": {"reference": f"Encounter/{encounter_id}"},
-                    "medicationCodeableConcept": {"coding": [{"system": "http://www.nlm.nih.gov/research/umls/rxnorm", "code": "860975"}]},
-                    "authoredOn": encounter_start.isoformat().replace("+00:00", "Z"),
-                    "meta": {"lastUpdated": encounter_end.isoformat().replace("+00:00", "Z")},
-                },
-                {
-                    "resourceType": "Observation", "id": f"synthetic-o-{patient_number:05d}-{encounter_number:02d}",
-                    "status": "final", "subject": {"reference": f"Patient/{patient_id}"},
-                    "encounter": {"reference": f"Encounter/{encounter_id}"},
-                    "category": [{"coding": [{"system": "http://terminology.hl7.org/CodeSystem/observation-category", "code": "laboratory"}]}],
-                    "code": {"coding": [{"system": "http://loinc.org", "code": "2339-0", "display": "Glucose [Mass/volume] in Blood"}]},
-                    "effectiveDateTime": encounter_start.isoformat().replace("+00:00", "Z"),
-                    "valueQuantity": {
-                        "value": round(rng.uniform(70.0, 180.0), 1), "unit": "mg/dL",
-                        "system": "http://unitsofmeasure.org", "code": "mg/dL",
+                    "resourceType": "Encounter",
+                    "id": encounter_id,
+                    "status": "finished",
+                    "class": {"code": encounter_class},
+                    "subject": {"reference": f"Patient/{patient_id}"},
+                    "period": {
+                        "start": encounter_start.isoformat().replace("+00:00", "Z"),
+                        "end": encounter_end.isoformat().replace("+00:00", "Z"),
                     },
                     "meta": {"lastUpdated": encounter_end.isoformat().replace("+00:00", "Z")},
-                },
-            ])
+                }
+            )
+            resources.extend(
+                [
+                    {
+                        "resourceType": "Condition",
+                        "id": f"synthetic-c-{patient_number:05d}-{encounter_number:02d}",
+                        "subject": {"reference": f"Patient/{patient_id}"},
+                        "encounter": {"reference": f"Encounter/{encounter_id}"},
+                        "clinicalStatus": {"coding": [{"code": "active"}]},
+                        "code": {
+                            "coding": [
+                                {
+                                    "system": "http://hl7.org/fhir/sid/icd-10-cm",
+                                    "code": rng.choice(["I10", "E11.9", "J06.9"]),
+                                }
+                            ]
+                        },
+                        "recordedDate": encounter_start.isoformat().replace("+00:00", "Z"),
+                        "meta": {"lastUpdated": encounter_end.isoformat().replace("+00:00", "Z")},
+                    },
+                    {
+                        "resourceType": "Procedure",
+                        "id": f"synthetic-pr-{patient_number:05d}-{encounter_number:02d}",
+                        "status": "completed",
+                        "subject": {"reference": f"Patient/{patient_id}"},
+                        "encounter": {"reference": f"Encounter/{encounter_id}"},
+                        "code": {"coding": [{"system": "http://www.ama-assn.org/go/cpt", "code": "99213"}]},
+                        "performedDateTime": encounter_start.isoformat().replace("+00:00", "Z"),
+                        "meta": {"lastUpdated": encounter_end.isoformat().replace("+00:00", "Z")},
+                    },
+                    {
+                        "resourceType": "MedicationRequest",
+                        "id": f"synthetic-m-{patient_number:05d}-{encounter_number:02d}",
+                        "status": "active",
+                        "subject": {"reference": f"Patient/{patient_id}"},
+                        "encounter": {"reference": f"Encounter/{encounter_id}"},
+                        "medicationCodeableConcept": {
+                            "coding": [{"system": "http://www.nlm.nih.gov/research/umls/rxnorm", "code": "860975"}]
+                        },
+                        "authoredOn": encounter_start.isoformat().replace("+00:00", "Z"),
+                        "meta": {"lastUpdated": encounter_end.isoformat().replace("+00:00", "Z")},
+                    },
+                    {
+                        "resourceType": "Observation",
+                        "id": f"synthetic-o-{patient_number:05d}-{encounter_number:02d}",
+                        "status": "final",
+                        "subject": {"reference": f"Patient/{patient_id}"},
+                        "encounter": {"reference": f"Encounter/{encounter_id}"},
+                        "category": [
+                            {
+                                "coding": [
+                                    {
+                                        "system": "http://terminology.hl7.org/CodeSystem/observation-category",
+                                        "code": "laboratory",
+                                    }
+                                ]
+                            }
+                        ],
+                        "code": {
+                            "coding": [
+                                {
+                                    "system": "http://loinc.org",
+                                    "code": "2339-0",
+                                    "display": "Glucose [Mass/volume] in Blood",
+                                }
+                            ]
+                        },
+                        "effectiveDateTime": encounter_start.isoformat().replace("+00:00", "Z"),
+                        "valueQuantity": {
+                            "value": round(rng.uniform(70.0, 180.0), 1),
+                            "unit": "mg/dL",
+                            "system": "http://unitsofmeasure.org",
+                            "code": "mg/dL",
+                        },
+                        "meta": {"lastUpdated": encounter_end.isoformat().replace("+00:00", "Z")},
+                    },
+                ]
+            )
             if encounter_number == 0 and encounter_class == "IMP":
                 index_discharge = encounter_end
             if encounter_number == 0:
@@ -105,33 +176,55 @@ def generate_fhir_bundle(patient_count: int = 25, seed: int = 42) -> dict[str, A
         if patient_number % 4 == 0 and imaging_encounter_id and imaging_started:
             modality_code = "CT" if patient_number % 8 == 0 else "MR"
             instance_count = 2 + patient_number % 5
-            resources.append({
-                "resourceType": "ImagingStudy", "id": f"synthetic-img-{patient_number:05d}", "status": "available",
-                "subject": {"reference": f"Patient/{patient_id}"},
-                "encounter": {"reference": f"Encounter/{imaging_encounter_id}"},
-                "started": imaging_started.isoformat().replace("+00:00", "Z"),
-                "identifier": [
-                    {"system": "urn:dicom:uid", "value": f"urn:oid:1.2.826.0.1.3680043.10.543.{patient_number}"},
-                    {"system": "urn:synthetic:accession", "value": f"SYN-ACC-{patient_number:05d}"},
-                ],
-                "numberOfSeries": 1,
-                "numberOfInstances": instance_count,
-                "series": [{
-                    "uid": f"1.2.826.0.1.3680043.10.543.{patient_number}.1", "number": 1,
-                    "modality": {"system": "http://dicom.nema.org/resources/ontology/DCM", "code": modality_code},
-                    "bodySite": {"system": "http://snomed.info/sct", "code": "51185008", "display": "Thoracic structure"},
+            resources.append(
+                {
+                    "resourceType": "ImagingStudy",
+                    "id": f"synthetic-img-{patient_number:05d}",
+                    "status": "available",
+                    "subject": {"reference": f"Patient/{patient_id}"},
+                    "encounter": {"reference": f"Encounter/{imaging_encounter_id}"},
+                    "started": imaging_started.isoformat().replace("+00:00", "Z"),
+                    "identifier": [
+                        {"system": "urn:dicom:uid", "value": f"urn:oid:1.2.826.0.1.3680043.10.543.{patient_number}"},
+                        {"system": "urn:synthetic:accession", "value": f"SYN-ACC-{patient_number:05d}"},
+                    ],
+                    "numberOfSeries": 1,
                     "numberOfInstances": instance_count,
-                }],
-                "meta": {"lastUpdated": imaging_started.isoformat().replace("+00:00", "Z")},
-            })
+                    "series": [
+                        {
+                            "uid": f"1.2.826.0.1.3680043.10.543.{patient_number}.1",
+                            "number": 1,
+                            "modality": {
+                                "system": "http://dicom.nema.org/resources/ontology/DCM",
+                                "code": modality_code,
+                            },
+                            "bodySite": {
+                                "system": "http://snomed.info/sct",
+                                "code": "51185008",
+                                "display": "Thoracic structure",
+                            },
+                            "numberOfInstances": instance_count,
+                        }
+                    ],
+                    "meta": {"lastUpdated": imaging_started.isoformat().replace("+00:00", "Z")},
+                }
+            )
         if index_discharge and patient_number % 5 == 0:
             readmit_id = f"synthetic-e-{patient_number:05d}-readmit"
             readmit_start = index_discharge + timedelta(days=7)
             readmit_end = readmit_start + timedelta(days=2)
-            resources.append({
-                "resourceType": "Encounter", "id": readmit_id, "status": "finished", "class": {"code": "IMP"},
-                "subject": {"reference": f"Patient/{patient_id}"},
-                "period": {"start": readmit_start.isoformat().replace("+00:00", "Z"), "end": readmit_end.isoformat().replace("+00:00", "Z")},
-                "meta": {"lastUpdated": readmit_end.isoformat().replace("+00:00", "Z")},
-            })
+            resources.append(
+                {
+                    "resourceType": "Encounter",
+                    "id": readmit_id,
+                    "status": "finished",
+                    "class": {"code": "IMP"},
+                    "subject": {"reference": f"Patient/{patient_id}"},
+                    "period": {
+                        "start": readmit_start.isoformat().replace("+00:00", "Z"),
+                        "end": readmit_end.isoformat().replace("+00:00", "Z"),
+                    },
+                    "meta": {"lastUpdated": readmit_end.isoformat().replace("+00:00", "Z")},
+                }
+            )
     return {"resourceType": "Bundle", "type": "collection", "entry": [{"resource": resource} for resource in resources]}

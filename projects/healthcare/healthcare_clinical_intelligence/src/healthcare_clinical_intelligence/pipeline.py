@@ -36,7 +36,8 @@ def run_fhir_file(input_path: Path, output_dir: Path) -> dict[str, int]:
 
 def run_claims_file(input_path: Path, output_dir: Path) -> dict[str, int]:
     output_dir.mkdir(parents=True, exist_ok=True)
-    accepted, rejected = [], []
+    accepted: list[dict[str, Any]] = []
+    rejected: list[dict[str, Any]] = []
     for row, errors in iter_validated_claim_rows(input_path):
         (rejected if errors else accepted).append({"reason_codes": errors, "payload": row} if errors else row)
     (output_dir / "accepted_claims.jsonl").write_text("".join(json.dumps(row) + "\n" for row in accepted))

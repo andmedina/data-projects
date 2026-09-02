@@ -3,10 +3,10 @@
 from __future__ import annotations
 
 import csv
+import re
 from datetime import date
 from decimal import Decimal, InvalidOperation
 from pathlib import Path
-import re
 from typing import Iterator
 
 REQUIRED_COLUMNS = (
@@ -88,8 +88,7 @@ def validate_claim_row(row: dict[str, str]) -> list[str]:
             errors.append(f"NEGATIVE_{field.upper()}")
 
     if all(field in amounts for field in BASE_AMOUNT_FIELDS) and (
-        amounts["paid_amount"] > amounts["allowed_amount"]
-        or amounts["allowed_amount"] > amounts["billed_amount"]
+        amounts["paid_amount"] > amounts["allowed_amount"] or amounts["allowed_amount"] > amounts["billed_amount"]
     ):
         errors.append("INVALID_FINANCIAL_HIERARCHY")
     if all(field in amounts for field in (*BASE_AMOUNT_FIELDS, "patient_responsibility_amount")):
@@ -163,11 +162,7 @@ def validate_claim_rows(rows: list[dict[str, str]]) -> list[tuple[dict[str, str]
         )
         header_signatures.setdefault(claim_id, set()).add(signature)
 
-    inconsistent_claims = {
-        claim_id
-        for claim_id, signatures in header_signatures.items()
-        if len(signatures) > 1
-    }
+    inconsistent_claims = {claim_id for claim_id, signatures in header_signatures.items() if len(signatures) > 1}
     validated = []
     for row in rows:
         errors = validate_claim_row(row)

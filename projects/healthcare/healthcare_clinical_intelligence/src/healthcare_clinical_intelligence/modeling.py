@@ -3,17 +3,16 @@
 from __future__ import annotations
 
 import csv
-from datetime import datetime, timezone
 import hashlib
 import json
-from pathlib import Path
 import platform
+from datetime import datetime, timezone
+from pathlib import Path
 from typing import Any
-
 
 FEATURES = ["prior_encounter_count", "prior_ed_count", "age_at_prediction"]
 TARGET = "readmitted_within_30_days"
-MODEL_CONFIG = {
+MODEL_CONFIG: dict[str, Any] = {
     "implementation_version": "readmission-governance-v1",
     "model": "logistic_regression",
     "class_weight": "balanced",
@@ -24,7 +23,7 @@ MODEL_CONFIG = {
     "decision_threshold": 0.5,
     "calibration_bins": 5,
 }
-APPROVAL_POLICY = {
+APPROVAL_POLICY: dict[str, Any] = {
     "minimum_test_rows": 20,
     "minimum_roc_auc": 0.5,
     "maximum_brier_score": 0.30,
@@ -50,14 +49,10 @@ def _patient_temporal_split(
     cutoff_index = min(len(ordered_predictions) - 2, max(0, int(len(rows) * train_fraction) - 1))
     cutoff_at = ordered_predictions[cutoff_index]
     train_patients = {
-        patient_id
-        for patient_id, predictions in patient_predictions.items()
-        if max(predictions) <= cutoff_at
+        patient_id for patient_id, predictions in patient_predictions.items() if max(predictions) <= cutoff_at
     }
     test_patients = {
-        patient_id
-        for patient_id, predictions in patient_predictions.items()
-        if min(predictions) > cutoff_at
+        patient_id for patient_id, predictions in patient_predictions.items() if min(predictions) > cutoff_at
     }
     crossover_patients = set(patient_predictions) - train_patients - test_patients
     train = [row for row in rows if row["patient_id"] in train_patients]
@@ -70,10 +65,18 @@ def _patient_temporal_split(
 
 def _classification_metrics(actual: list[int], probabilities: list[float], threshold: float) -> dict[str, Any]:
     predicted = [int(probability >= threshold) for probability in probabilities]
-    true_positive = sum(observed == 1 and prediction == 1 for observed, prediction in zip(actual, predicted, strict=True))
-    false_positive = sum(observed == 0 and prediction == 1 for observed, prediction in zip(actual, predicted, strict=True))
-    false_negative = sum(observed == 1 and prediction == 0 for observed, prediction in zip(actual, predicted, strict=True))
-    true_negative = sum(observed == 0 and prediction == 0 for observed, prediction in zip(actual, predicted, strict=True))
+    true_positive = sum(
+        observed == 1 and prediction == 1 for observed, prediction in zip(actual, predicted, strict=True)
+    )
+    false_positive = sum(
+        observed == 0 and prediction == 1 for observed, prediction in zip(actual, predicted, strict=True)
+    )
+    false_negative = sum(
+        observed == 1 and prediction == 0 for observed, prediction in zip(actual, predicted, strict=True)
+    )
+    true_negative = sum(
+        observed == 0 and prediction == 0 for observed, prediction in zip(actual, predicted, strict=True)
+    )
     precision = true_positive / (true_positive + false_positive) if true_positive + false_positive else 0.0
     recall = true_positive / (true_positive + false_negative) if true_positive + false_negative else 0.0
     specificity = true_negative / (true_negative + false_positive) if true_negative + false_positive else 0.0
@@ -92,7 +95,9 @@ def _classification_metrics(actual: list[int], probabilities: list[float], thres
 
 
 def _calibration_report(actual: list[int], probabilities: list[float], bins: int) -> dict[str, Any]:
-    brier_score = sum((probability - observed) ** 2 for observed, probability in zip(actual, probabilities, strict=True)) / len(actual)
+    brier_score = sum(
+        (probability - observed) ** 2 for observed, probability in zip(actual, probabilities, strict=True)
+    ) / len(actual)
     calibration_bins = []
     expected_calibration_error = 0.0
     for bin_index in range(bins):
@@ -271,26 +276,26 @@ Engineering demonstration of a temporally ordered, patient-level 30-day readmiss
 
 ## Experiment
 
-- Experiment ID: `{report['experiment_id']}`
-- Cohort SHA-256: `{report['cohort_sha256']}`
-- Model: `{report['model']}`
-- Features: {', '.join(report['features'])}
-- Train/test rows: {report['train_rows']} / {report['test_rows']}
-- Patient overlap: {report['split']['patient_overlap_count']}
-- Temporal overlap: {report['split']['temporal_overlap']}
-- Excluded crossover rows: {report['split']['excluded_crossover_rows']}
+- Experiment ID: `{report["experiment_id"]}`
+- Cohort SHA-256: `{report["cohort_sha256"]}`
+- Model: `{report["model"]}`
+- Features: {", ".join(report["features"])}
+- Train/test rows: {report["train_rows"]} / {report["test_rows"]}
+- Patient overlap: {report["split"]["patient_overlap_count"]}
+- Temporal overlap: {report["split"]["temporal_overlap"]}
+- Excluded crossover rows: {report["split"]["excluded_crossover_rows"]}
 
 ## Evaluation
 
-- Test prevalence: {report['test_prevalence']}
-- ROC-AUC: {report['roc_auc']}
-- PR-AUC: {report['pr_auc']}
-- Brier score: {report['calibration']['brier_score']}
-- Expected calibration error: {report['calibration']['expected_calibration_error']}
+- Test prevalence: {report["test_prevalence"]}
+- ROC-AUC: {report["roc_auc"]}
+- PR-AUC: {report["pr_auc"]}
+- Brier score: {report["calibration"]["brier_score"]}
+- Expected calibration error: {report["calibration"]["expected_calibration_error"]}
 
 ## Governance
 
-- Status: `{report['approval']['status']}`
+- Status: `{report["approval"]["status"]}`
 - Clinical use approved: `false`
 - Failed technical checks: {failed_summary}
 - Subgroup dimensions reviewed: age group and prior ED-use group
@@ -304,11 +309,7 @@ def _append_experiment_registry(report: dict[str, Any], registry_path: Path) -> 
     existing_ids = set()
     if registry_path.exists():
         with registry_path.open() as handle:
-            existing_ids = {
-                json.loads(line)["experiment_id"]
-                for line in handle
-                if line.strip()
-            }
+            existing_ids = {json.loads(line)["experiment_id"] for line in handle if line.strip()}
     if report["experiment_id"] in existing_ids:
         return
     registry_entry = {
@@ -395,8 +396,7 @@ def train_readmission_baseline(cohort_path: Path, output_path: Path) -> dict[str
             "patient_overlap_count": len(train_patients & test_patients),
             "train_end_at": max(row["prediction_at"] for row in train),
             "test_start_at": min(row["prediction_at"] for row in test),
-            "temporal_overlap": max(row["prediction_at"] for row in train)
-            >= min(row["prediction_at"] for row in test),
+            "temporal_overlap": max(row["prediction_at"] for row in train) >= min(row["prediction_at"] for row in test),
             "excluded_crossover_patients": len({row["patient_id"] for row in excluded}),
             "excluded_crossover_rows": len(excluded),
             "excluded_crossover_fraction": round(len(excluded) / len(rows), 4),
@@ -407,8 +407,7 @@ def train_readmission_baseline(cohort_path: Path, output_path: Path) -> dict[str
         "calibration": _calibration_report(y_test, probabilities, MODEL_CONFIG["calibration_bins"]),
         "subgroup_performance": _subgroup_report(test, y_test, probabilities),
         "coefficients": {
-            feature: round(float(coefficient), 6)
-            for feature, coefficient in zip(FEATURES, model.coef_[0], strict=True)
+            feature: round(float(coefficient), 6) for feature, coefficient in zip(FEATURES, model.coef_[0], strict=True)
         },
         "artifacts": {
             "report": output_path.name,

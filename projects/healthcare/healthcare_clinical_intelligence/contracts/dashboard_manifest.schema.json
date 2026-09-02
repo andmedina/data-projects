@@ -1,0 +1,46 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.invalid/healthcare-clinical-intelligence/dashboard-manifest.schema.json",
+  "title": "Healthcare Clinical Intelligence dashboard manifest",
+  "type": "object",
+  "required": ["contract_version", "generated_at_utc", "source", "datasets"],
+  "properties": {
+    "contract_version": {"const": "1.0.0"},
+    "generated_at_utc": {"type": "string", "format": "date-time"},
+    "source": {"type": "string", "minLength": 1},
+    "datasets": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": ["name", "file", "rows", "columns", "bytes", "sha256"],
+        "properties": {
+          "name": {"type": "string", "minLength": 1},
+          "file": {"type": "string", "pattern": "^[^/\\\\]+\\.csv$"},
+          "rows": {"type": "integer", "minimum": 0},
+          "columns": {"type": "array", "items": {"type": "string"}},
+          "bytes": {"type": "integer", "minimum": 0},
+          "sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"}
+        },
+        "additionalProperties": false
+      }
+    },
+    "model_report": {"type": "string"},
+    "model_report_sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+    "model_artifacts": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["type", "file", "bytes", "sha256"],
+        "properties": {
+          "type": {"enum": ["predictions", "model_card", "experiment_registry"]},
+          "file": {"type": "string"},
+          "bytes": {"type": "integer", "minimum": 0},
+          "sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"}
+        },
+        "additionalProperties": false
+      }
+    }
+  },
+  "additionalProperties": false
+}

@@ -11,6 +11,24 @@ PYTHONPATH=src python -m pytest -q
 
 The report must show 4 source records, 3 accepted records, and 1 quarantined Observation. Output is ignored by Git.
 
+## Full developer verification
+
+Install every development extra and run the static/unit gate:
+
+```bash
+make install-dev
+make quality
+```
+
+With Docker PostgreSQL healthy, run the entire database path in a disposable database:
+
+```bash
+docker compose up -d postgres
+make integration
+```
+
+The smoke test creates a database named `hci_smoke_<random>`, applies the expanded migration twice, loads FHIR, claims, ADT/ORM/ORU, OMOP-compatible views, imaging metadata, and model governance, then repeats the ingestion paths to prove idempotency. It validates the quality gate, dashboard checksums, required indexes, query timings, and operational run counts before dropping only that temporary database.
+
 ## PostgreSQL
 
 ```bash
@@ -93,6 +111,7 @@ Apply the latest SQL and export the complete dashboard contract from PostgreSQL:
 ```bash
 PYTHONPATH=src python -m healthcare_clinical_intelligence.cli db-migrate --dsn "postgresql://healthcare_app:change-me@localhost:55432/healthcare_clinical_intelligence"
 PYTHONPATH=src python -m healthcare_clinical_intelligence.cli dashboard-export --dsn "postgresql://healthcare_app:change-me@localhost:55432/healthcare_clinical_intelligence" --output output/dashboard
+PYTHONPATH=src python -m healthcare_clinical_intelligence.cli dashboard-validate output/dashboard
 ```
 
 Pass `--model-report output/readmission_baseline_report.json` to add model governance, calibration, subgroup, and approval-check datasets plus the governed model artifacts to the bundle.
@@ -118,6 +137,15 @@ PYTHONPATH=src python -m healthcare_clinical_intelligence.cli quality-gate --dsn
 ```
 
 Then confirm that `data_quality.csv` contains no `fail` or `error` statuses. Run both `tickets/DA-001_ed_utilization/validation.sql` and `tickets/DA-002_eligibility_aware_ed_utilization/validation.sql` independently before publishing ED visuals. Warning rows require documented review. The generated output is intentionally ignored by Git.
+
+Inspect runtime health and representative query timings at any point:
+
+```bash
+PYTHONPATH=src python -m healthcare_clinical_intelligence.cli operations-report --dsn "postgresql://healthcare_app:change-me@localhost:55432/healthcare_clinical_intelligence"
+PYTHONPATH=src python -m healthcare_clinical_intelligence.cli performance-report --dsn "postgresql://healthcare_app:change-me@localhost:55432/healthcare_clinical_intelligence"
+```
+
+Release candidates require zero stale runs, missing terminal timestamps, count mismatches, missing required indexes, or benchmark queries above the five-second smoke threshold. Historical failed runs remain visible and do not alone block a release; investigate and document any new failure.
 
 For the controlled population-health validation, generate and load a Coverage-enabled synthetic Bundle, then verify the critical Coverage controls and independent mart reconciliation:
 

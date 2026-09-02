@@ -5,7 +5,6 @@ from __future__ import annotations
 from datetime import datetime
 from typing import Any
 
-
 ADT_EVENT_STATES = {
     "A01": "admitted",
     "A02": "transferred",
@@ -70,11 +69,7 @@ def _empty_result(errors: list[str]) -> dict[str, Any]:
 
 def parse_message(message: str) -> dict[str, Any]:
     """Parse the repository's ADT, ORM, and ORU profiles into normalized events."""
-    segments = [
-        line.split("|")
-        for line in message.strip().replace("\r", "\n").split("\n")
-        if line
-    ]
+    segments = [line.split("|") for line in message.strip().replace("\r", "\n").split("\n") if line]
     segments_by_name: dict[str, list[list[str]]] = {}
     for segment in segments:
         segments_by_name.setdefault(segment[0], []).append(segment)

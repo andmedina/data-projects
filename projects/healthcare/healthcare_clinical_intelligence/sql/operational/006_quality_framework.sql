@@ -69,6 +69,9 @@ values
     ('unmapped_hl7_messages', 'Accepted HL7 ADT, ORM, or ORU messages without a canonical event', 'reconciliation', 'error', 0),
     ('final_laboratory_observations_missing_result', 'Final laboratory observations without a typed result or documented absent reason', 'completeness', 'error', 0),
     ('final_laboratory_observations_missing_effective_at', 'Final laboratory observations without a reporting timestamp', 'completeness', 'error', 0),
+    ('stale_pipeline_runs', 'Pipeline runs left in running state for more than two hours', 'operability', 'error', 0),
+    ('completed_pipeline_runs_missing_completion', 'Terminal pipeline runs without a completion timestamp', 'operability', 'error', 0),
+    ('pipeline_run_count_mismatches', 'Pipeline source counts that do not reconcile to loaded, duplicate, and rejected counts', 'reconciliation', 'error', 0),
     ('quarantined_fhir_records', 'FHIR records retained in quarantine', 'validity', 'warning', 0),
     ('quarantined_claim_lines', 'Claim lines retained in quarantine', 'validity', 'warning', 0),
     ('quarantined_hl7_messages', 'HL7 messages retained in quarantine', 'validity', 'warning', 0)

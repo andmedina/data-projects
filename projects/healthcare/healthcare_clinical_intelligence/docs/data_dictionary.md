@@ -3,6 +3,9 @@
 | Entity | Grain | Primary identifier |
 | --- | --- | --- |
 | `raw.fhir_resource` | one ingested source payload version | `raw_resource_id` |
+| `operational.pipeline_run` | one durable source-ingestion attempt | `run_id` |
+| `operational.pipeline_run_health` | one derived health row per ingestion attempt | `run_id` |
+| `operational.schema_migration` | one named effective schema bundle | `migration_name` |
 | `operational.quality_check_definition` | one named quality-control policy | `check_name` |
 | `operational.quality_run` | one quality-gate execution | `quality_run_id` |
 | `operational.quality_result` | one check result per quality run | `quality_run_id` + `check_name` |
@@ -52,3 +55,5 @@ The `omop` objects are v5.4-compatible extract views, not a conformant CDM insta
 `core.coverage` retains status, patient and payer references, typed `coverage_start` and `coverage_end`, and the raw source-version key. The eligibility mart counts each distinct patient/payer/month once, even if defensive deduplication is needed.
 
 `core.claim` carries payer and billing-provider keys, frequency/original-claim lineage, and financial totals. `core.claim_line` carries the rendering-provider key and line financials. Both retain paid, allowed, billed, patient-responsibility, and adjustment amounts so headers can be reconciled exactly to detail.
+
+`operational.pipeline_run` retains source/loaded/duplicate/rejected counts and bounded structured details. `operational.pipeline_run_health` derives duration, stale state, terminal-completion validity, and the count-reconciliation flag. `operational.schema_migration` records SHA-256 over the expanded SQL, application timestamp, execution milliseconds, and the number of changed-checksum applications.

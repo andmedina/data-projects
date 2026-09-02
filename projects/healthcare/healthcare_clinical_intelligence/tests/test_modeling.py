@@ -9,9 +9,25 @@ from healthcare_clinical_intelligence.modeling import evaluate_model_approval, t
 def test_baseline_model_writes_report(tmp_path: Path):
     pytest.importorskip("sklearn")
     cohort = tmp_path / "cohort.csv"
-    fields = ["index_encounter_id", "patient_id", "prediction_at", "prior_encounter_count", "prior_ed_count", "age_at_prediction", "readmitted_within_30_days"]
+    fields = [
+        "index_encounter_id",
+        "patient_id",
+        "prediction_at",
+        "prior_encounter_count",
+        "prior_ed_count",
+        "age_at_prediction",
+        "readmitted_within_30_days",
+    ]
     rows = [
-        {"index_encounter_id": f"e-{index}", "patient_id": f"p-{index // 2}", "prediction_at": f"2025-01-{index + 1:02d}T00:00:00Z", "prior_encounter_count": index % 4, "prior_ed_count": index % 2, "age_at_prediction": 30 + index, "readmitted_within_30_days": int(index in {1, 5, 9, 11})}
+        {
+            "index_encounter_id": f"e-{index}",
+            "patient_id": f"p-{index // 2}",
+            "prediction_at": f"2025-01-{index + 1:02d}T00:00:00Z",
+            "prior_encounter_count": index % 4,
+            "prior_ed_count": index % 2,
+            "age_at_prediction": 30 + index,
+            "readmitted_within_30_days": int(index in {1, 5, 9, 11}),
+        }
         for index in range(12)
     ]
     with cohort.open("w", newline="") as handle:
@@ -30,9 +46,10 @@ def test_baseline_model_writes_report(tmp_path: Path):
     assert report["approval"]["status"] == "review_required"
     assert (tmp_path / "report.json").exists()
     assert (tmp_path / "report_predictions.csv").exists()
-    assert "Clinical use, patient-level intervention, and deployment are prohibited" in (
-        tmp_path / "report_model_card.md"
-    ).read_text()
+    assert (
+        "Clinical use, patient-level intervention, and deployment are prohibited"
+        in (tmp_path / "report_model_card.md").read_text()
+    )
 
     repeat = train_readmission_baseline(cohort, tmp_path / "report.json")
 
@@ -43,9 +60,25 @@ def test_baseline_model_writes_report(tmp_path: Path):
 def test_technical_approval_never_grants_clinical_use(tmp_path: Path):
     pytest.importorskip("sklearn")
     cohort = tmp_path / "cohort.csv"
-    fields = ["index_encounter_id", "patient_id", "prediction_at", "prior_encounter_count", "prior_ed_count", "age_at_prediction", "readmitted_within_30_days"]
+    fields = [
+        "index_encounter_id",
+        "patient_id",
+        "prediction_at",
+        "prior_encounter_count",
+        "prior_ed_count",
+        "age_at_prediction",
+        "readmitted_within_30_days",
+    ]
     rows = [
-        {"index_encounter_id": f"e-{index}", "patient_id": f"p-{index}", "prediction_at": f"2025-01-{index + 1:02d}T00:00:00Z", "prior_encounter_count": index % 3, "prior_ed_count": index % 2, "age_at_prediction": 50 + index, "readmitted_within_30_days": index % 2}
+        {
+            "index_encounter_id": f"e-{index}",
+            "patient_id": f"p-{index}",
+            "prediction_at": f"2025-01-{index + 1:02d}T00:00:00Z",
+            "prior_encounter_count": index % 3,
+            "prior_ed_count": index % 2,
+            "age_at_prediction": 50 + index,
+            "readmitted_within_30_days": index % 2,
+        }
         for index in range(12)
     ]
     with cohort.open("w", newline="") as handle:

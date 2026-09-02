@@ -23,7 +23,11 @@ def ed_utilization_from_accepted(accepted_path: Path, output_path: Path) -> list
             ):
                 encounters[canonical["start_at"][:7]].append(canonical["patient_id"])
     rows = [
-        {"reporting_month": month, "ed_encounters": len(patient_ids), "patients_with_ed_encounter": len(set(patient_ids))}
+        {
+            "reporting_month": month,
+            "ed_encounters": len(patient_ids),
+            "patients_with_ed_encounter": len(set(patient_ids)),
+        }
         for month, patient_ids in sorted(encounters.items())
     ]
     output_path.parent.mkdir(parents=True, exist_ok=True)
@@ -120,7 +124,9 @@ def eligible_ed_utilization_from_accepted(
 
 def clinical_activity_from_accepted(accepted_path: Path, output_path: Path) -> list[dict[str, Any]]:
     """Export monthly condition, procedure, and medication-request counts."""
-    activity: dict[str, dict[str, int]] = defaultdict(lambda: {"conditions": 0, "procedures": 0, "medication_requests": 0})
+    activity: dict[str, dict[str, int]] = defaultdict(
+        lambda: {"conditions": 0, "procedures": 0, "medication_requests": 0}
+    )
     mapping = {
         "Condition": ("recorded_at", "conditions"),
         "Procedure": ("recorded_at", "procedures"),
@@ -135,7 +141,9 @@ def clinical_activity_from_accepted(accepted_path: Path, output_path: Path) -> l
     rows = [{"reporting_month": month} | values for month, values in sorted(activity.items())]
     output_path.parent.mkdir(parents=True, exist_ok=True)
     with output_path.open("w", newline="") as handle:
-        writer = csv.DictWriter(handle, fieldnames=["reporting_month", "conditions", "procedures", "medication_requests"])
+        writer = csv.DictWriter(
+            handle, fieldnames=["reporting_month", "conditions", "procedures", "medication_requests"]
+        )
         writer.writeheader()
         writer.writerows(rows)
     return rows

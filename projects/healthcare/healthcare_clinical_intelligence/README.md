@@ -63,7 +63,22 @@ Implemented locally:
 - governed logistic-regression readmission baseline with strict patient/time separation, calibration, subgroup review, experiment registry, model card, and technical approval gate; and
 - PostgreSQL/Airflow/HAPI configuration and CI test coverage.
 
+Production-hardening controls are also implemented: checksum-tracked idempotent migrations, durable pipeline failure metadata, count reconciliation, stale-run detection, versioned dashboard contracts with file checksums, representative PostgreSQL performance guardrails, and a disposable-database end-to-end CI test.
+
 The Docker PostgreSQL, Airflow, and HAPI FHIR API workflows have been validated locally; see [validation evidence](docs/validation_evidence.md). Full OMOP conformance and production DICOM/PACS integration remain later extensions. See the [runbook](docs/runbook.md) for runnable commands.
+
+## Developer verification
+
+```bash
+python -m venv .venv
+source .venv/bin/activate
+make install-dev
+make quality
+docker compose up -d postgres
+make integration
+```
+
+`make integration` creates a uniquely named temporary PostgreSQL database, runs migrations and every controlled domain twice, validates 29 quality checks, verifies the 18-dataset dashboard contract, captures five query benchmarks, and removes only the temporary database. See the [operations guide](docs/operations.md), [troubleshooting guide](docs/troubleshooting.md), [performance guardrails](docs/performance.md), and [release checklist](docs/release_checklist.md).
 
 ## Portfolio relationship
 

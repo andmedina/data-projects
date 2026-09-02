@@ -6,7 +6,6 @@ import json
 import uuid
 from typing import Any
 
-
 QUALITY_CHECK_QUERIES = {
     "orphan_observations": """
         select count(*) from core.observation o
@@ -238,6 +237,18 @@ QUALITY_CHECK_QUERIES = {
           and observation_status in ('final', 'amended', 'corrected')
           and effective_at is null
     """,
+    "stale_pipeline_runs": """
+        select count(*) from operational.pipeline_run_health
+        where is_stale
+    """,
+    "completed_pipeline_runs_missing_completion": """
+        select count(*) from operational.pipeline_run_health
+        where terminal_state_missing_completion
+    """,
+    "pipeline_run_count_mismatches": """
+        select count(*) from operational.pipeline_run_health
+        where has_count_mismatch
+    """,
     "quarantined_fhir_records": "select count(*) from quarantine.fhir_resource",
     "quarantined_claim_lines": "select count(*) from quarantine.claim_line",
     "quarantined_hl7_messages": "select count(*) from quarantine.hl7_message",
@@ -311,7 +322,16 @@ def run_quality_gate(
                    (quality_run_id, check_name, quality_dimension, severity,
                     observed_value, failure_threshold, status, details)
                    values (%s,%s,%s,%s,%s,%s,%s,%s::jsonb)""",
-                (quality_run_id, check_name, dimension, severity, observed_value, threshold, status, json.dumps(details)),
+                (
+                    quality_run_id,
+                    check_name,
+                    dimension,
+                    severity,
+                    observed_value,
+                    threshold,
+                    status,
+                    json.dumps(details),
+                ),
             )
             results.append(
                 {

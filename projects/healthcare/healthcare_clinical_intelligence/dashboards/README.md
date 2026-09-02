@@ -9,7 +9,15 @@ PYTHONPATH=src python -m healthcare_clinical_intelligence.cli dashboard-export \
   --model-report output/readmission_baseline_report.json
 ```
 
-The optional model report is validated as JSON and copied into the bundle. `manifest.json` records every dataset, filename, row count, generation timestamp, and optional model artifact.
+The optional model report is validated as JSON and copied into the bundle. Contract version `1.0.0` records every dataset's filename, columns, row count, byte count, SHA-256 checksum, generation timestamp, and optional model artifact. Its machine-readable shape is in `contracts/dashboard_manifest.schema.json`.
+
+Validate every refresh before handing it to a dashboard client:
+
+```bash
+PYTHONPATH=src python -m healthcare_clinical_intelligence.cli dashboard-validate output/dashboard
+```
+
+The command returns nonzero for missing files, unsafe paths, duplicated dataset names, row/header drift, or checksum mismatches.
 
 | Dataset | Intended page | Grain |
 | --- | --- | --- |

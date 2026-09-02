@@ -4,7 +4,12 @@ import csv
 import json
 from pathlib import Path
 
-from healthcare_clinical_intelligence.dashboard import EXPORT_QUERIES, export_dashboard_bundle
+from healthcare_clinical_intelligence.dashboard import (
+    DASHBOARD_CONTRACT_VERSION,
+    EXPORT_QUERIES,
+    export_dashboard_bundle,
+    validate_dashboard_bundle,
+)
 
 
 class FakeCursor:
@@ -43,10 +48,36 @@ def test_dashboard_bundle_writes_all_datasets_and_manifest(tmp_path: Path) -> No
 
     assert len(manifest["datasets"]) == len(EXPORT_QUERIES)
     assert all(dataset["rows"] == 1 for dataset in manifest["datasets"])
+    assert all(len(dataset["sha256"]) == 64 for dataset in manifest["datasets"])
+    assert manifest["contract_version"] == DASHBOARD_CONTRACT_VERSION
     assert manifest["model_report"] == "readmission_baseline_report.json"
     assert json.loads((tmp_path / "dashboard" / "manifest.json").read_text())["source"].startswith("PostgreSQL")
     with (tmp_path / "dashboard" / "executive_overview.csv").open(newline="") as handle:
         assert list(csv.reader(handle)) == [["metric", "value"], ["executive_overview", "1"]]
+    assert validate_dashboard_bundle(tmp_path / "dashboard")["status"] == "valid"
+
+
+def test_dashboard_contract_detects_tampered_dataset(tmp_path: Path) -> None:
+    export_dashboard_bundle(FakeConnection(), tmp_path / "dashboard")
+    (tmp_path / "dashboard" / "executive_overview.csv").write_text("metric,value\ntampered,999\n")
+
+    report = validate_dashboard_bundle(tmp_path / "dashboard")
+
+    assert report["status"] == "invalid"
+    assert any("executive_overview" in error and "checksum" in error for error in report["errors"])
+
+
+def test_dashboard_contract_rejects_unsafe_file_path(tmp_path: Path) -> None:
+    export_dashboard_bundle(FakeConnection(), tmp_path / "dashboard")
+    manifest_path = tmp_path / "dashboard" / "manifest.json"
+    manifest = json.loads(manifest_path.read_text())
+    manifest["datasets"][0]["file"] = "../outside.csv"
+    manifest_path.write_text(json.dumps(manifest))
+
+    report = validate_dashboard_bundle(tmp_path / "dashboard")
+
+    assert report["status"] == "invalid"
+    assert any("unsafe" in error for error in report["errors"])
 
 
 def test_dashboard_claim_queries_use_current_adjudication_state() -> None:

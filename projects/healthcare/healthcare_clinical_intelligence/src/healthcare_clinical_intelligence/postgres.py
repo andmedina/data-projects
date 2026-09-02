@@ -4,17 +4,80 @@ from __future__ import annotations
 
 import hashlib
 import json
+import time
 import uuid
 from collections.abc import Iterator
 from contextlib import contextmanager
-from typing import Any
 from pathlib import Path
+from typing import Any
 
+from .claims import iter_validated_claim_rows
 from .fhir import iter_resources, validate_resource
 from .fhir_client import latest_last_updated, paginated_bundles, resource_url
-from .claims import iter_validated_claim_rows
 from .hl7 import parse_message
 from .quality import QUALITY_CHECK_QUERIES
+
+
+def _start_pipeline_run(connection: Any, run_id: str, pipeline_name: str, source_description: str) -> None:
+    """Persist a durable run marker before the data transaction begins."""
+    with connection.cursor() as cursor:
+        cursor.execute(
+            """insert into operational.pipeline_run
+               (run_id, pipeline_name, status, source_description)
+               values (%s,%s,'running',%s)""",
+            (run_id, pipeline_name, source_description),
+        )
+    connection.commit()
+
+
+def _complete_pipeline_run(
+    connection: Any,
+    run_id: str,
+    status: str,
+    records_seen: int,
+    records_loaded: int,
+    records_duplicates: int,
+    records_rejected: int,
+    details: dict[str, Any] | None = None,
+) -> None:
+    with connection.cursor() as cursor:
+        cursor.execute(
+            """update operational.pipeline_run
+               set status=%s,
+                   completed_at=current_timestamp,
+                   updated_at=current_timestamp,
+                   records_seen=%s,
+                   records_loaded=%s,
+                   records_duplicates=%s,
+                   records_rejected=%s,
+                   details=%s::jsonb
+               where run_id=%s""",
+            (
+                status,
+                records_seen,
+                records_loaded,
+                records_duplicates,
+                records_rejected,
+                json.dumps(details or {}),
+                run_id,
+            ),
+        )
+    connection.commit()
+
+
+def _fail_pipeline_run(connection: Any, run_id: str, exc: Exception) -> None:
+    """Rollback partial data and retain a terminal failure record."""
+    connection.rollback()
+    with connection.cursor() as cursor:
+        cursor.execute(
+            """update operational.pipeline_run
+               set status='failed', completed_at=current_timestamp,
+                   updated_at=current_timestamp,
+                   details=jsonb_build_object('error_type', %s, 'error', %s)
+               where run_id=%s""",
+            (type(exc).__name__, str(exc)[:2000], run_id),
+        )
+    connection.commit()
 
 
 @contextmanager
@@ -30,39 +93,63 @@ def open_connection(dsn: str) -> Iterator[Any]:
 def load_fhir_payload(connection: Any, payload: dict[str, Any], source_system: str = "synthea") -> dict[str, int | str]:
     """Persist raw FHIR JSON and quarantined invalid records in one database run."""
     run_id = str(uuid.uuid4())
-    report: dict[str, int | str] = {"run_id": run_id, "source_records": 0, "loaded": 0, "duplicates": 0, "rejected": 0}
-    with connection.cursor() as cursor:
-        cursor.execute(
-            "insert into operational.pipeline_run (run_id, pipeline_name, status, source_description) values (%s, %s, 'running', %s)",
-            (run_id, "fhir_raw_ingestion", source_system),
-        )
-        for resource in iter_resources(payload):
-            report["source_records"] += 1
-            errors = validate_resource(resource)
-            resource_type, resource_id = resource.get("resourceType"), resource.get("id")
-            if errors:
+    report: dict[str, Any] = {"run_id": run_id, "source_records": 0, "loaded": 0, "duplicates": 0, "rejected": 0}
+    _start_pipeline_run(connection, run_id, "fhir_raw_ingestion", source_system)
+    try:
+        with connection.cursor() as cursor:
+            for resource in iter_resources(payload):
+                report["source_records"] += 1
+                errors = validate_resource(resource)
+                resource_type, resource_id = resource.get("resourceType"), resource.get("id")
+                if errors:
+                    cursor.execute(
+                        "insert into quarantine.fhir_resource (run_id, source_system, resource_type, source_resource_id, payload, reason_code, reason_detail) values (%s,%s,%s,%s,%s::jsonb,%s,%s) on conflict do nothing",
+                        (
+                            run_id,
+                            source_system,
+                            resource_type,
+                            resource_id,
+                            json.dumps(resource),
+                            errors[0],
+                            ",".join(errors),
+                        ),
+                    )
+                    report["rejected"] += 1
+                    continue
+                digest = hashlib.sha256(json.dumps(resource, sort_keys=True).encode()).hexdigest()
                 cursor.execute(
-                    "insert into quarantine.fhir_resource (run_id, source_system, resource_type, source_resource_id, payload, reason_code, reason_detail) values (%s,%s,%s,%s,%s::jsonb,%s,%s) on conflict do nothing",
-                    (run_id, source_system, resource_type, resource_id, json.dumps(resource), errors[0], ",".join(errors)),
+                    """insert into raw.fhir_resource
+                       (source_system, resource_type, source_resource_id, last_updated_at, payload, payload_sha256, run_id)
+                       values (%s,%s,%s,%s,%s::jsonb,%s,%s)
+                       on conflict (source_system, resource_type, source_resource_id, payload_sha256) do nothing
+                       returning raw_resource_id""",
+                    (
+                        source_system,
+                        resource_type,
+                        resource_id,
+                        (resource.get("meta") or {}).get("lastUpdated"),
+                        json.dumps(resource),
+                        digest,
+                        run_id,
+                    ),
                 )
-                report["rejected"] += 1
-                continue
-            digest = hashlib.sha256(json.dumps(resource, sort_keys=True).encode()).hexdigest()
-            cursor.execute(
-                """insert into raw.fhir_resource
-                   (source_system, resource_type, source_resource_id, last_updated_at, payload, payload_sha256, run_id)
-                   values (%s,%s,%s,%s,%s::jsonb,%s,%s)
-                   on conflict (source_system, resource_type, source_resource_id, payload_sha256) do nothing
-                   returning raw_resource_id""",
-                (source_system, resource_type, resource_id, (resource.get("meta") or {}).get("lastUpdated"), json.dumps(resource), digest, run_id),
-            )
-            if cursor.fetchone():
-                report["loaded"] += 1
-            else:
-                report["duplicates"] += 1
+                if cursor.fetchone():
+                    report["loaded"] += 1
+                else:
+                    report["duplicates"] += 1
         status = "partial" if report["rejected"] else "succeeded"
-        cursor.execute("update operational.pipeline_run set status = %s, completed_at = current_timestamp where run_id = %s", (status, run_id))
-    connection.commit()
+        _complete_pipeline_run(
+            connection,
+            run_id,
+            status,
+            int(report["source_records"]),
+            int(report["loaded"]),
+            int(report["duplicates"]),
+            int(report["rejected"]),
+        )
+    except Exception as exc:
+        _fail_pipeline_run(connection, run_id, exc)
+        raise
     return report
 
 
@@ -82,7 +169,14 @@ def load_fhir_incremental(
         )
         row = cursor.fetchone()
     since = row[0] if row else None
-    report: dict[str, int | str | None] = {"resource_type": resource_type, "since": since, "source_records": 0, "loaded": 0, "duplicates": 0, "rejected": 0}
+    report: dict[str, Any] = {
+        "resource_type": resource_type,
+        "since": since,
+        "source_records": 0,
+        "loaded": 0,
+        "duplicates": 0,
+        "rejected": 0,
+    }
     latest: str | None = None
     initial_url = resource_url(base_url, resource_type, since)
     iterator = paginated_bundles(initial_url) if fetcher is None else paginated_bundles(initial_url, fetcher)
@@ -107,18 +201,136 @@ def load_fhir_incremental(
     return report
 
 
-def execute_sql_file(connection: Any, path: Path) -> None:
-    """Execute one controlled project SQL file as a transaction."""
+def _expanded_sql_file(path: Path) -> str:
+    """Expand the project's controlled psql include directives."""
     sql_parts: list[str] = []
     for line in path.read_text().splitlines():
-        if line.startswith("\\ir "):
-            included = path.parent / line.removeprefix("\\ir ").strip()
-            sql_parts.append(included.read_text())
+        stripped = line.lstrip()
+        if stripped.startswith("\\ir "):
+            included = path.parent / stripped.removeprefix("\\ir ").strip()
+            sql_parts.append(_expanded_sql_file(included))
         else:
             sql_parts.append(line)
+    return "\n".join(sql_parts)
+
+
+def execute_sql_file(connection: Any, path: Path) -> None:
+    """Execute one controlled project SQL file as a transaction."""
     with connection.cursor() as cursor:
-        cursor.execute("\n".join(sql_parts))
+        cursor.execute(_expanded_sql_file(path))
     connection.commit()
+
+
+def apply_database_migration(connection: Any, path: Path) -> dict[str, Any]:
+    """Apply an idempotent schema bundle and retain its checksum and timing."""
+    migration_name = path.name
+    sql_text = _expanded_sql_file(path)
+    checksum = hashlib.sha256(sql_text.encode()).hexdigest()
+    with connection.cursor() as cursor:
+        cursor.execute("create schema if not exists operational")
+        cursor.execute(
+            """create table if not exists operational.schema_migration (
+                   migration_name text primary key,
+                   checksum_sha256 text not null,
+                   applied_at timestamptz not null default current_timestamp,
+                   execution_ms numeric(14, 3) not null default 0,
+                   application_count integer not null default 1 check (application_count > 0)
+               )"""
+        )
+        cursor.execute(
+            "select checksum_sha256, application_count from operational.schema_migration where migration_name=%s",
+            (migration_name,),
+        )
+        previous = cursor.fetchone()
+    connection.commit()
+    if previous and previous[0] == checksum:
+        return {
+            "migration": migration_name,
+            "checksum_sha256": checksum,
+            "status": "already_current",
+            "application_count": int(previous[1]),
+            "execution_ms": 0.0,
+        }
+
+    started = time.perf_counter()
+    try:
+        with connection.cursor() as cursor:
+            cursor.execute(sql_text)
+            cursor.execute(
+                """insert into operational.schema_migration
+                   (migration_name, checksum_sha256, applied_at, execution_ms, application_count)
+                   values (%s,%s,current_timestamp,%s,1)
+                   on conflict (migration_name) do update
+                   set checksum_sha256=excluded.checksum_sha256,
+                       applied_at=current_timestamp,
+                       execution_ms=excluded.execution_ms,
+                       application_count=operational.schema_migration.application_count + 1
+                   returning application_count""",
+                (migration_name, checksum, round((time.perf_counter() - started) * 1000, 3)),
+            )
+            application_count = int(cursor.fetchone()[0])
+        connection.commit()
+    except Exception:
+        connection.rollback()
+        raise
+    return {
+        "migration": migration_name,
+        "checksum_sha256": checksum,
+        "status": "updated" if previous else "applied",
+        "application_count": application_count,
+        "execution_ms": round((time.perf_counter() - started) * 1000, 3),
+    }
+
+
+def database_operational_report(connection: Any) -> dict[str, Any]:
+    """Summarize pipeline health, recent failures, and applied schema state."""
+    with connection.cursor() as cursor:
+        cursor.execute(
+            """select
+                   count(*) filter (where status = 'running') as running,
+                   count(*) filter (where is_stale) as stale,
+                   count(*) filter (where status = 'failed') as failed,
+                   count(*) filter (where terminal_state_missing_completion) as missing_completion,
+                   count(*) filter (where has_count_mismatch) as count_mismatches
+               from operational.pipeline_run_health"""
+        )
+        running, stale, failed, missing_completion, count_mismatches = cursor.fetchone()
+        cursor.execute(
+            """select pipeline_name, max(completed_at)::text
+               from operational.pipeline_run
+               where status in ('succeeded', 'partial')
+               group by pipeline_name
+               order by pipeline_name"""
+        )
+        latest_success = [
+            {"pipeline_name": str(pipeline_name), "completed_at": completed_at}
+            for pipeline_name, completed_at in cursor.fetchall()
+        ]
+        cursor.execute(
+            """select migration_name, checksum_sha256, applied_at::text,
+                      execution_ms::float8, application_count
+               from operational.schema_migration
+               order by migration_name"""
+        )
+        migrations = [
+            {
+                "migration": str(name),
+                "checksum_sha256": str(checksum),
+                "applied_at": applied_at,
+                "execution_ms": float(execution_ms),
+                "application_count": int(application_count),
+            }
+            for name, checksum, applied_at, execution_ms, application_count in cursor.fetchall()
+        ]
+    return {
+        "running": int(running),
+        "stale": int(stale),
+        "failed": int(failed),
+        "missing_completion": int(missing_completion),
+        "count_mismatches": int(count_mismatches),
+        "latest_success": latest_success,
+        "migrations": migrations,
+    }
 
 
 def database_quality_report(connection: Any) -> dict[str, int]:
@@ -148,8 +360,12 @@ def database_quality_report(connection: Any) -> dict[str, int]:
         "invalid_encounter_periods": QUALITY_CHECK_QUERIES["invalid_encounter_periods"],
         "active_coverages_missing_period": QUALITY_CHECK_QUERIES["active_coverages_missing_period"],
         "overlapping_active_coverages": QUALITY_CHECK_QUERIES["overlapping_active_coverages"],
-        "final_laboratory_observations_missing_result": QUALITY_CHECK_QUERIES["final_laboratory_observations_missing_result"],
-        "final_laboratory_observations_missing_effective_at": QUALITY_CHECK_QUERIES["final_laboratory_observations_missing_effective_at"],
+        "final_laboratory_observations_missing_result": QUALITY_CHECK_QUERIES[
+            "final_laboratory_observations_missing_result"
+        ],
+        "final_laboratory_observations_missing_effective_at": QUALITY_CHECK_QUERIES[
+            "final_laboratory_observations_missing_effective_at"
+        ],
         "quarantined_fhir_records": "select count(*) from quarantine.fhir_resource",
     }
     result: dict[str, int] = {}
@@ -160,7 +376,9 @@ def database_quality_report(connection: Any) -> dict[str, int]:
     return result
 
 
-def run_fhir_database_pipeline(connection: Any, payload: dict[str, Any], sql_root: Path, source_system: str = "synthea") -> dict[str, Any]:
+def run_fhir_database_pipeline(
+    connection: Any, payload: dict[str, Any], sql_root: Path, source_system: str = "synthea"
+) -> dict[str, Any]:
     """Load raw FHIR, build the core model, and return auditable quality results."""
     ingestion = load_fhir_payload(connection, payload, source_system)
     execute_sql_file(connection, sql_root / "core" / "021_load_core.sql")
@@ -194,41 +412,59 @@ def refresh_omop_subset(connection: Any, sql_root: Path) -> list[dict[str, int |
 def load_claims_csv(connection: Any, input_path: Path, source_system: str = "synthetic_claims") -> dict[str, int | str]:
     """Load validated claim lines to raw storage and quarantine invalid rows."""
     run_id = str(uuid.uuid4())
-    report: dict[str, int | str] = {"run_id": run_id, "source_records": 0, "loaded": 0, "duplicates": 0, "rejected": 0}
-    with connection.cursor() as cursor:
-        cursor.execute(
-            "insert into operational.pipeline_run (run_id, pipeline_name, status, source_description) values (%s, %s, 'running', %s)",
-            (run_id, "claims_raw_ingestion", source_system),
-        )
-        for row, errors in iter_validated_claim_rows(input_path):
-            report["source_records"] += 1
-            if errors:
+    report: dict[str, Any] = {"run_id": run_id, "source_records": 0, "loaded": 0, "duplicates": 0, "rejected": 0}
+    _start_pipeline_run(connection, run_id, "claims_raw_ingestion", source_system)
+    try:
+        with connection.cursor() as cursor:
+            for row, errors in iter_validated_claim_rows(input_path):
+                report["source_records"] += 1
+                if errors:
+                    cursor.execute(
+                        """insert into quarantine.claim_line
+                        (run_id, source_system, source_claim_id, source_claim_line_id, payload, reason_code, reason_detail)
+                        values (%s,%s,%s,%s,%s::jsonb,%s,%s) on conflict do nothing""",
+                        (
+                            run_id,
+                            source_system,
+                            row.get("claim_id"),
+                            row.get("claim_line_id"),
+                            json.dumps(row),
+                            errors[0],
+                            ",".join(errors),
+                        ),
+                    )
+                    report["rejected"] += 1
+                    continue
+                digest = hashlib.sha256(json.dumps(row, sort_keys=True).encode()).hexdigest()
                 cursor.execute(
-                    """insert into quarantine.claim_line
-                    (run_id, source_system, source_claim_id, source_claim_line_id, payload, reason_code, reason_detail)
-                    values (%s,%s,%s,%s,%s::jsonb,%s,%s) on conflict do nothing""",
-                    (run_id, source_system, row.get("claim_id"), row.get("claim_line_id"), json.dumps(row), errors[0], ",".join(errors)),
+                    """insert into raw.claim_line
+                    (source_system, source_claim_id, source_claim_line_id, payload, payload_sha256, run_id)
+                    values (%s,%s,%s,%s::jsonb,%s,%s)
+                    on conflict (source_system, source_claim_line_id, payload_sha256) do nothing returning raw_claim_line_id""",
+                    (source_system, row["claim_id"], row["claim_line_id"], json.dumps(row), digest, run_id),
                 )
-                report["rejected"] += 1
-                continue
-            digest = hashlib.sha256(json.dumps(row, sort_keys=True).encode()).hexdigest()
-            cursor.execute(
-                """insert into raw.claim_line
-                (source_system, source_claim_id, source_claim_line_id, payload, payload_sha256, run_id)
-                values (%s,%s,%s,%s::jsonb,%s,%s)
-                on conflict (source_system, source_claim_line_id, payload_sha256) do nothing returning raw_claim_line_id""",
-                (source_system, row["claim_id"], row["claim_line_id"], json.dumps(row), digest, run_id),
-            )
-            if cursor.fetchone():
-                report["loaded"] += 1
-            else:
-                report["duplicates"] += 1
-        cursor.execute("update operational.pipeline_run set status=%s, completed_at=current_timestamp where run_id=%s", ("partial" if report["rejected"] else "succeeded", run_id))
-    connection.commit()
+                if cursor.fetchone():
+                    report["loaded"] += 1
+                else:
+                    report["duplicates"] += 1
+        _complete_pipeline_run(
+            connection,
+            run_id,
+            "partial" if report["rejected"] else "succeeded",
+            int(report["source_records"]),
+            int(report["loaded"]),
+            int(report["duplicates"]),
+            int(report["rejected"]),
+        )
+    except Exception as exc:
+        _fail_pipeline_run(connection, run_id, exc)
+        raise
     return report
 
 
-def run_claims_database_pipeline(connection: Any, input_path: Path, sql_root: Path, source_system: str = "synthetic_claims") -> dict[str, Any]:
+def run_claims_database_pipeline(
+    connection: Any, input_path: Path, sql_root: Path, source_system: str = "synthetic_claims"
+) -> dict[str, Any]:
     ingestion = load_claims_csv(connection, input_path, source_system)
     execute_sql_file(connection, sql_root / "core" / "022_load_claims.sql")
     entity_queries = {
@@ -260,7 +496,7 @@ def load_hl7_file(connection: Any, input_path: Path, source_system: str = "synth
     """Persist controlled HL7 messages and map ADT, ORM, and ORU events."""
     run_id = str(uuid.uuid4())
     messages = [part for part in input_path.read_text().strip().split("\n\n") if part.strip()]
-    report: dict[str, int | str] = {
+    report: dict[str, Any] = {
         "run_id": run_id,
         "source_messages": len(messages),
         "loaded": 0,
@@ -271,11 +507,39 @@ def load_hl7_file(connection: Any, input_path: Path, source_system: str = "synth
         "orders_loaded": 0,
         "observations_loaded": 0,
     }
-    with connection.cursor() as cursor:
-        cursor.execute(
-            "insert into operational.pipeline_run (run_id, pipeline_name, status, source_description) values (%s,%s,'running',%s)",
-            (run_id, "hl7_raw_ingestion", source_system),
+    _start_pipeline_run(connection, run_id, "hl7_raw_ingestion", source_system)
+    try:
+        _load_hl7_messages(connection, messages, source_system, run_id, report)
+        has_rejections = bool(report["rejected"] or report["mapping_rejected"])
+        _complete_pipeline_run(
+            connection,
+            run_id,
+            "partial" if has_rejections else "succeeded",
+            int(report["source_messages"]),
+            int(report["loaded"]),
+            int(report["duplicates"]),
+            int(report["rejected"]),
+            {
+                "mapping_rejected": report["mapping_rejected"],
+                "encounter_events_loaded": report["encounter_events_loaded"],
+                "orders_loaded": report["orders_loaded"],
+                "observations_loaded": report["observations_loaded"],
+            },
         )
+    except Exception as exc:
+        _fail_pipeline_run(connection, run_id, exc)
+        raise
+    return report
+
+
+def _load_hl7_messages(
+    connection: Any,
+    messages: list[str],
+    source_system: str,
+    run_id: str,
+    report: dict[str, Any],
+) -> None:
+    with connection.cursor() as cursor:
         for message in messages:
             parsed = parse_message(message)
             control_id = parsed.get("message_control_id")
@@ -426,10 +690,3 @@ def load_hl7_file(connection: Any, input_path: Path, source_system: str = "synth
                 )
                 if cursor.fetchone():
                     report["observations_loaded"] += 1
-        has_rejections = bool(report["rejected"] or report["mapping_rejected"])
-        cursor.execute(
-            "update operational.pipeline_run set status=%s, completed_at=current_timestamp where run_id=%s",
-            ("partial" if has_rejections else "succeeded", run_id),
-        )
-    connection.commit()
-    return report

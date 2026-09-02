@@ -14,6 +14,8 @@
 - Source-preserving OMOP v5.4-compatible PERSON, observation-period, visit, clinical-event, and payer-plan views with stable IDs and reconciliation.
 - Metadata-only FHIR ImagingStudy header/series model, DICOM modality/body-site fields, count controls, and activity mart.
 - Temporally valid readmission cohort, reproducible baseline model, calibration/subgroup evidence, experiment registry, model card, and synthetic-demo approval gate.
+- Monorepo-root CI with linting, formatting, typing, coverage, dependency updates, and a live PostgreSQL end-to-end job.
+- Checksum-tracked schema application, durable pipeline failure/count metadata, stale-run controls, versioned dashboard checksums, and performance smoke tests.
 
 ## Next extensions
 

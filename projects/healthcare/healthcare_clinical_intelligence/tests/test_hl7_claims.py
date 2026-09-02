@@ -70,7 +70,15 @@ def test_controlled_hl7_profile_fields_are_required():
 
 
 def test_claim_financial_hierarchy_is_validated():
-    row = {"claim_id": "c1", "claim_line_id": "l1", "patient_id": "p1", "service_date": "2025-01-01", "billed_amount": "10", "allowed_amount": "11", "paid_amount": "9"}
+    row = {
+        "claim_id": "c1",
+        "claim_line_id": "l1",
+        "patient_id": "p1",
+        "service_date": "2025-01-01",
+        "billed_amount": "10",
+        "allowed_amount": "11",
+        "paid_amount": "9",
+    }
     assert "INVALID_FINANCIAL_HIERARCHY" in validate_claim_row(row)
 
 

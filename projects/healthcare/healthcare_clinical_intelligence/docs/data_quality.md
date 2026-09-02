@@ -40,7 +40,10 @@ Default error-severity checks enforce:
 - accepted HL7 message-to-canonical reconciliation;
 - mapped ORM service-code completeness;
 - final laboratory result or documented absent-reason completeness; and
-- final laboratory effective-time completeness.
+- final laboratory effective-time completeness;
+- no pipeline left running for more than two hours;
+- every terminal pipeline has a completion timestamp; and
+- populated pipeline source counts reconcile to loaded, duplicate, and rejected outcomes.
 
 FHIR, claim, and HL7 quarantine volumes are warning-severity checks. OMOP source terminology without a governed Standard Concept mapping is also a warning. This keeps deliberate test fixtures and known standardization debt visible without failing a normal development pipeline. Use strict mode for a zero-warning release gate.
 
