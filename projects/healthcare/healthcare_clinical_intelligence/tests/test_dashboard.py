@@ -74,6 +74,11 @@ def test_dashboard_includes_omop_reconciliation_and_vocabulary_status() -> None:
     assert "mapped_to_standard" in EXPORT_QUERIES["omop_vocabulary_status"]
 
 
+def test_dashboard_includes_imaging_activity_contract() -> None:
+    assert "imaging_activity_monthly" in EXPORT_QUERIES
+    assert "imaging_instances" in EXPORT_QUERIES["imaging_activity_monthly"]
+
+
 def test_dashboard_exports_governed_model_datasets_and_artifacts(tmp_path: Path) -> None:
     report = {
         "experiment_id": "exp-001",

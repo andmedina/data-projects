@@ -107,6 +107,36 @@ select source_resource_id as coverage_id, regexp_replace(payload #>> '{beneficia
        payload #>> '{period,end}' as coverage_end
 from latest_resource where resource_type = 'Coverage' and source_version_rank = 1;
 
+create or replace view staging.stg_imaging_study as
+with latest_resource as (
+    select *, row_number() over (partition by resource_type, source_resource_id order by last_updated_at desc nulls last, ingested_at desc, raw_resource_id desc) as source_version_rank
+    from raw.fhir_resource
+)
+select source_resource_id as imaging_study_id,
+       regexp_replace(payload #>> '{subject,reference}', '^.*/', '') as patient_id,
+       regexp_replace(payload #>> '{encounter,reference}', '^.*/', '') as encounter_id,
+       payload ->> 'status' as study_status,
+       payload ->> 'started' as started_at,
+       (select identifier ->> 'value' from jsonb_array_elements(coalesce(payload -> 'identifier', '[]'::jsonb)) identifier where identifier ->> 'system' = 'urn:dicom:uid' limit 1) as study_uid,
+       (select identifier ->> 'value' from jsonb_array_elements(coalesce(payload -> 'identifier', '[]'::jsonb)) identifier where identifier ->> 'system' <> 'urn:dicom:uid' limit 1) as accession_identifier,
+       nullif(payload ->> 'numberOfSeries', '')::integer as number_of_series,
+       nullif(payload ->> 'numberOfInstances', '')::integer as number_of_instances,
+       raw_resource_id
+from latest_resource where resource_type = 'ImagingStudy' and source_version_rank = 1;
+
+create or replace view staging.stg_imaging_series as
+select study.imaging_study_id,
+       series ->> 'uid' as series_uid,
+       nullif(series ->> 'number', '')::integer as series_number,
+       series #>> '{modality,system}' as modality_system,
+       series #>> '{modality,code}' as modality_code,
+       series #>> '{bodySite,system}' as body_site_system,
+       series #>> '{bodySite,code}' as body_site_code,
+       nullif(series ->> 'numberOfInstances', '')::integer as number_of_instances
+from staging.stg_imaging_study study
+join raw.fhir_resource raw on raw.raw_resource_id = study.raw_resource_id
+cross join lateral jsonb_array_elements(coalesce(raw.payload -> 'series', '[]'::jsonb)) series;
+
 create or replace view staging.stg_condition as
 with latest_resource as (
     select *, row_number() over (partition by resource_type, source_resource_id order by last_updated_at desc nulls last, ingested_at desc, raw_resource_id desc) as source_version_rank

@@ -13,6 +13,8 @@
 | `core.procedure_occurrence` | one patient procedure | `procedure_id` |
 | `core.medication_request` | one medication request | `medication_request_id` |
 | `core.coverage` | one patient coverage record | `coverage_id` |
+| `core.imaging_study` | one FHIR ImagingStudy metadata header | `imaging_study_id` |
+| `core.imaging_series` | one DICOM series metadata row per study | `imaging_study_id` + `series_uid` |
 | `core.organization` | one source organization | `organization_id` |
 | `core.provider` | one source or claims provider | `provider_id` |
 | `core.payer` | one claims payer | `payer_id` |
@@ -32,6 +34,7 @@
 | `mart.lab_result_completeness_monthly` | laboratory result month | `reporting_month` |
 | `mart.hl7_encounter_current_state` | one latest state per HL7 encounter | `encounter_id` |
 | `mart.hl7_order_current_state` | one latest event per HL7 order | `order_id` |
+| `mart.imaging_activity_monthly` | imaging study month | `reporting_month` |
 | `omop.entity_id_map` | one stable integer ID per entity type/source ID | `entity_type` + `source_id` |
 | `omop.person` | one qualified canonical patient | `person_id` |
 | `omop.observation_period` | one non-overlapping observable period per person/island | `observation_period_id` |

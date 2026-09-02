@@ -89,6 +89,46 @@ set patient_id = excluded.patient_id, payer_organization_id = excluded.payer_org
     coverage_status = excluded.coverage_status, source_raw_resource_id = excluded.source_raw_resource_id,
     coverage_start = excluded.coverage_start, coverage_end = excluded.coverage_end;
 
+insert into quarantine.fhir_resource
+    (run_id, source_system, resource_type, source_resource_id, payload, reason_code, reason_detail)
+select raw.run_id, raw.source_system, raw.resource_type, raw.source_resource_id, raw.payload,
+       case when patient.patient_id is null then 'UNRESOLVED_PATIENT_REFERENCE' else 'UNRESOLVED_ENCOUNTER_REFERENCE' end,
+       'ImagingStudy reference does not resolve to the canonical clinical model'
+from raw.fhir_resource raw
+join staging.stg_imaging_study study on study.raw_resource_id = raw.raw_resource_id
+left join core.patient patient on patient.patient_id = study.patient_id
+left join core.encounter encounter on encounter.encounter_id = study.encounter_id
+where patient.patient_id is null or (study.encounter_id is not null and encounter.encounter_id is null)
+on conflict do nothing;
+
+insert into core.imaging_study
+    (imaging_study_id, patient_id, encounter_id, study_status, started_at, study_uid,
+     accession_identifier, number_of_series, number_of_instances, source_raw_resource_id)
+select imaging_study_id, patient_id, encounter_id, study_status, started_at::timestamptz,
+       study_uid, accession_identifier, number_of_series, number_of_instances, raw_resource_id
+from staging.stg_imaging_study
+where patient_id in (select patient_id from core.patient)
+  and (encounter_id is null or encounter_id in (select encounter_id from core.encounter))
+on conflict (imaging_study_id) do update
+set patient_id = excluded.patient_id, encounter_id = excluded.encounter_id,
+    study_status = excluded.study_status, started_at = excluded.started_at,
+    study_uid = excluded.study_uid, accession_identifier = excluded.accession_identifier,
+    number_of_series = excluded.number_of_series, number_of_instances = excluded.number_of_instances,
+    source_raw_resource_id = excluded.source_raw_resource_id;
+
+delete from core.imaging_series series
+using staging.stg_imaging_study study
+where series.imaging_study_id = study.imaging_study_id;
+
+insert into core.imaging_series
+    (imaging_study_id, series_uid, series_number, modality_system, modality_code,
+     body_site_system, body_site_code, number_of_instances)
+select series.imaging_study_id, series.series_uid, series.series_number,
+       series.modality_system, series.modality_code, series.body_site_system,
+       series.body_site_code, series.number_of_instances
+from staging.stg_imaging_series series
+join core.imaging_study study on study.imaging_study_id = series.imaging_study_id;
+
 insert into core.condition_occurrence (condition_id, patient_id, encounter_id, clinical_status, coding_system, code, recorded_at, source_raw_resource_id)
 select condition_id, patient_id, encounter_id, clinical_status, coding_system, code, nullif(recorded_at, '')::timestamptz, raw_resource_id
 from staging.stg_condition

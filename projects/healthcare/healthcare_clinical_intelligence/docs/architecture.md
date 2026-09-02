@@ -7,7 +7,7 @@
 | Source | Original synthetic healthcare source | generated/Synthea FHIR R4, HAPI FHIR API, controlled claims CSV, HL7 v2 |
 | Raw | Immutable source fidelity and replay | FHIR JSON, claim-line payloads, HL7 message text, source and run metadata |
 | Staging | Parsed, typed, normalized records | patient, encounter, observation, condition, procedure, medication, coverage, latest claims-line views |
-| Core | Canonical healthcare relationships | clinical entities, claim header/detail and dimensions, HL7 encounter/order/result events |
+| Core | Canonical healthcare relationships | clinical entities, imaging study/series metadata, claim header/detail and dimensions, HL7 encounter/order/result events |
 | Analytics | Purpose-built, documented queries | ED intensity, eligibility-aware utilization, clinical activity, claims-cost, lab-completeness, and HL7 current-state marts |
 | Standardization | Explicit interoperability extracts | source-preserving OMOP v5.4-compatible views, stable ID bridge, vocabulary-gap inventory |
 | Delivery | Reproducible consumer contracts | dashboard CSV bundle, manifest, validation evidence, governed model artifacts |

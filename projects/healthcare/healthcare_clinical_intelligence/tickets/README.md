@@ -15,6 +15,7 @@ Implemented ticket evidence:
 - `DE-007` Claims payer/provider/code dimensions, adjustment lineage, and current-adjudication reporting
 - `DE-008` HL7 ADT lifecycle, ORM order persistence, current-state marts, and reconciliation controls
 - `DE-009` Source-preserving OMOP v5.4-compatible extract views and vocabulary-gap governance
+- `DE-010` Metadata-only FHIR ImagingStudy header/series normalization and reconciliation
 - `DA-001` Emergency-department activity mart, independent validation, and stakeholder interpretation
 - `DA-002` Coverage member-month denominator and eligibility-aware ED utilization rate
 - `DS-001` Temporally valid 30-day readmission baseline

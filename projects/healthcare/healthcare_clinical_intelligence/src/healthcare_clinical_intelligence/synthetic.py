@@ -47,6 +47,8 @@ def generate_fhir_bundle(patient_count: int = 25, seed: int = 42) -> dict[str, A
             "meta": {"lastUpdated": start.isoformat().replace("+00:00", "Z")},
         })
         index_discharge: datetime | None = None
+        imaging_encounter_id: str | None = None
+        imaging_started: datetime | None = None
         for encounter_number in range(rng.randint(1, 4)):
             encounter_id = f"synthetic-e-{patient_number:05d}-{encounter_number:02d}"
             encounter_start = start + timedelta(days=rng.randint(0, 364), hours=rng.randint(0, 23))
@@ -97,6 +99,31 @@ def generate_fhir_bundle(patient_count: int = 25, seed: int = 42) -> dict[str, A
             ])
             if encounter_number == 0 and encounter_class == "IMP":
                 index_discharge = encounter_end
+            if encounter_number == 0:
+                imaging_encounter_id = encounter_id
+                imaging_started = encounter_start
+        if patient_number % 4 == 0 and imaging_encounter_id and imaging_started:
+            modality_code = "CT" if patient_number % 8 == 0 else "MR"
+            instance_count = 2 + patient_number % 5
+            resources.append({
+                "resourceType": "ImagingStudy", "id": f"synthetic-img-{patient_number:05d}", "status": "available",
+                "subject": {"reference": f"Patient/{patient_id}"},
+                "encounter": {"reference": f"Encounter/{imaging_encounter_id}"},
+                "started": imaging_started.isoformat().replace("+00:00", "Z"),
+                "identifier": [
+                    {"system": "urn:dicom:uid", "value": f"urn:oid:1.2.826.0.1.3680043.10.543.{patient_number}"},
+                    {"system": "urn:synthetic:accession", "value": f"SYN-ACC-{patient_number:05d}"},
+                ],
+                "numberOfSeries": 1,
+                "numberOfInstances": instance_count,
+                "series": [{
+                    "uid": f"1.2.826.0.1.3680043.10.543.{patient_number}.1", "number": 1,
+                    "modality": {"system": "http://dicom.nema.org/resources/ontology/DCM", "code": modality_code},
+                    "bodySite": {"system": "http://snomed.info/sct", "code": "51185008", "display": "Thoracic structure"},
+                    "numberOfInstances": instance_count,
+                }],
+                "meta": {"lastUpdated": imaging_started.isoformat().replace("+00:00", "Z")},
+            })
         if index_discharge and patient_number % 5 == 0:
             readmit_id = f"synthetic-e-{patient_number:05d}-readmit"
             readmit_start = index_discharge + timedelta(days=7)

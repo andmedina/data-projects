@@ -12,6 +12,7 @@
 - ED activity, clinical activity, claims-cost marts, and dashboard export contract.
 - Typed Coverage periods, distinct payer member-month denominators, and eligibility-aware ED utilization.
 - Source-preserving OMOP v5.4-compatible PERSON, observation-period, visit, clinical-event, and payer-plan views with stable IDs and reconciliation.
+- Metadata-only FHIR ImagingStudy header/series model, DICOM modality/body-site fields, count controls, and activity mart.
 - Temporally valid readmission cohort, reproducible baseline model, calibration/subgroup evidence, experiment registry, model card, and synthetic-demo approval gate.
 
 ## Next extensions
@@ -24,6 +25,6 @@
 | Model lifecycle hardening | Add external validation, confidence intervals, drift monitoring, accountable reviewers, and retraining/decommission controls when a non-synthetic use case exists |
 | Population-health hardening | Add continuous-enrollment rules, partial-month policy, risk adjustment, and an authoritative encounter-to-coverage attribution contract |
 | OMOP conformance | Load a governed Athena vocabulary release, complete required CDM tables, and run OHDSI Data Quality Dashboard/Achilles validation |
-| Imaging | Model ImagingStudy/radiology metadata and DICOM concepts without storing image pixels |
+| Imaging hardening | Add governed DiagnosticReport/order linkage, DICOMweb transport, SOP-class metadata, and synthetic de-identification validation when an interface contract exists |
 
 Extensions should preserve the same source-fidelity, reconciliation, synthetic-only, and independent-validation standards.

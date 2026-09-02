@@ -29,6 +29,8 @@ Default error-severity checks enforce:
 - OMOP-compatible PERSON and event source-to-view reconciliation;
 - one OMOP-compatible OBSERVATION_PERIOD for every extracted PERSON; and
 - OMOP-compatible event-to-PERSON/VISIT referential integrity;
+- ImagingStudy header-to-series and instance-count reconciliation; and
+- imaging-series modality completeness;
 - claim-line referential integrity;
 - exact claim header-to-line financial reconciliation;
 - exact claim-line summary-to-adjustment-detail reconciliation;

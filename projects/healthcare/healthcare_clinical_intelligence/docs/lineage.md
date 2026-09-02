@@ -20,4 +20,6 @@ canonical core/claim/quarantine tables → named checks in `quality.py` → `ope
 
 canonical patient/coverage/clinical events → `omop.entity_id_map` → eight OMOP v5.4-compatible views → domain reconciliation + vocabulary-status datasets → dashboard interoperability page.
 
+FHIR ImagingStudy JSON metadata → latest staging study/series views → `core.imaging_study` + `core.imaging_series` → count controls → monthly imaging activity dashboard dataset. Pixel data never enters this lineage.
+
 Every raw row retains source system, resource type, source ID, payload hash, and pipeline run ID. These fields support replay and reconciliation.

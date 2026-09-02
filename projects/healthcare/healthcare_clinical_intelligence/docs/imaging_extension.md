@@ -1,5 +1,9 @@
-# Imaging Extension
+# Imaging Metadata Extension
 
-Imaging is Phase 8. The platform will first ingest metadata—not pixel data—from FHIR `ImagingStudy`, `DiagnosticReport`, imaging orders, and DICOM headers. Pixel data is explicitly out of scope until secure synthetic imaging fixtures, storage controls, and a clear analytical or ML objective exist.
+The implemented controlled profile ingests FHIR `ImagingStudy` metadata through the immutable raw FHIR path. It normalizes one study header and one or more series rows, retaining patient/encounter relationships, status/start time, study and series UIDs, synthetic accession identifier, DICOM modality code, body-site code, and declared series/instance counts.
 
-Core links are patient, encounter, imaging study, modality, body site, report, and accession/study identifiers. DICOM UIDs are technical identifiers, not substitutes for privacy controls.
+No DICOM pixel data, rendered images, encapsulated documents, or binary FHIR resources are generated, ingested, or stored. DICOM UIDs are technical identifiers, not privacy controls; only invented synthetic identifiers are permitted.
+
+The gate reconciles declared study series counts to normalized series, declared study instance counts to series totals, and requires a modality on every series. `mart.imaging_activity_monthly` reports metadata volumes without image interpretation.
+
+DiagnosticReport/order linkage, DICOMweb/PACS transport, SOP-class metadata, de-identification validation, and image ML remain future work requiring explicit source/interface contracts.

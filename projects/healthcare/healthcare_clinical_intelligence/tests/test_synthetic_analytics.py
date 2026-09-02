@@ -29,6 +29,12 @@ def test_generator_is_deterministic():
     assert {coverage["payor"][0]["reference"] for coverage in coverages} == {
         "Organization/synthetic-payer-001"
     }
+    imaging_studies = [
+        entry["resource"] for entry in bundle["entry"]
+        if entry["resource"]["resourceType"] == "ImagingStudy"
+    ]
+    assert all(study["numberOfSeries"] == len(study["series"]) for study in imaging_studies)
+    assert all(study["numberOfInstances"] == sum(series["numberOfInstances"] for series in study["series"]) for study in imaging_studies)
 
 
 def test_ed_export_from_sample_bundle(tmp_path: Path):

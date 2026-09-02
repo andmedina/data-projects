@@ -9,14 +9,14 @@ All data in this repository will be synthetic. It must never contain PHI.
 Phase 1 establishes a reproducible clinical/FHIR foundation:
 
 - Synthea-generated FHIR R4 data as the baseline source;
-- `Patient`, `Encounter`, `Observation`, `Condition`, `Procedure`, `MedicationRequest`, `Practitioner`, `Organization`, and `Coverage` ingestion;
+- `Patient`, `Encounter`, `Observation`, `Condition`, `Procedure`, `MedicationRequest`, `Practitioner`, `Organization`, `Coverage`, and metadata-only `ImagingStudy` ingestion;
 - raw, staging, core, and analytics layers in PostgreSQL;
 - rejected-record quarantine and source-to-target reconciliation;
 - persistent threshold-based data-quality gates;
 - ED intensity, eligibility-aware ED utilization, clinical-activity, and claims-cost marts with a dashboard export contract; and
 - typed laboratory values, a lab-result completeness mart, and a reproduced missing-result incident.
 
-The HAPI FHIR API, live PostgreSQL workflow, and Airflow execution are optional integration paths. The repository already includes controlled HL7 ADT/ORM/ORU persistence, claims adjudication modeling, dashboard-ready exports, a temporally correct readmission-cohort export, and source-preserving OMOP v5.4-compatible views. Full OMOP conformance and imaging remain later extensions.
+The HAPI FHIR API, live PostgreSQL workflow, and Airflow execution are optional integration paths. The repository already includes controlled HL7 ADT/ORM/ORU persistence, claims adjudication modeling, dashboard-ready exports, a temporally correct readmission-cohort export, source-preserving OMOP v5.4-compatible views, and metadata-only ImagingStudy analytics. Full OMOP conformance and pixel/DICOM transport remain later extensions.
 
 ## Architecture
 
@@ -59,10 +59,11 @@ Implemented locally:
 - deterministic synthetic FHIR generation, database-backed dashboard bundle, and temporal readmission cohort export;
 - typed Coverage periods, distinct payer member-month denominators, and ED encounters per 1,000 eligible member months;
 - eight OMOP v5.4-compatible extract views with stable integer IDs, observation-period derivation, reconciliation, and vocabulary-gap reporting;
+- FHIR ImagingStudy header/series normalization, DICOM modality metadata, count reconciliation, and monthly activity export without pixels;
 - governed logistic-regression readmission baseline with strict patient/time separation, calibration, subgroup review, experiment registry, model card, and technical approval gate; and
 - PostgreSQL/Airflow/HAPI configuration and CI test coverage.
 
-The Docker PostgreSQL, Airflow, and HAPI FHIR API workflows have been validated locally; see [validation evidence](docs/validation_evidence.md). Full OMOP conformance and imaging remain later extensions. See the [runbook](docs/runbook.md) for runnable commands.
+The Docker PostgreSQL, Airflow, and HAPI FHIR API workflows have been validated locally; see [validation evidence](docs/validation_evidence.md). Full OMOP conformance and production DICOM/PACS integration remain later extensions. See the [runbook](docs/runbook.md) for runnable commands.
 
 ## Portfolio relationship
 

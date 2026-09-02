@@ -9,8 +9,9 @@ from typing import Any
 SUPPORTED_RESOURCES = {
     "Patient", "Encounter", "Observation", "Condition", "Procedure",
     "MedicationRequest", "Practitioner", "Organization", "Coverage",
+    "ImagingStudy",
 }
-PATIENT_SCOPED_RESOURCES = {"Encounter", "Observation", "Condition", "Procedure", "MedicationRequest", "Coverage"}
+PATIENT_SCOPED_RESOURCES = {"Encounter", "Observation", "Condition", "Procedure", "MedicationRequest", "Coverage", "ImagingStudy"}
 OBSERVATION_VALUE_KEYS = {
     "valueQuantity", "valueString", "valueBoolean", "valueInteger", "valueCodeableConcept",
 }
@@ -95,6 +96,19 @@ def validate_resource(resource: dict[str, Any]) -> list[str]:
                     errors.append("INVALID_COVERAGE_PERIOD")
             except (TypeError, ValueError):
                 errors.append("INVALID_COVERAGE_PERIOD")
+    if resource_type == "ImagingStudy":
+        if not resource.get("status"):
+            errors.append("MISSING_IMAGING_STUDY_STATUS")
+        if not resource.get("started"):
+            errors.append("MISSING_IMAGING_STUDY_STARTED")
+        series = resource.get("series") or []
+        if not series:
+            errors.append("MISSING_IMAGING_STUDY_SERIES")
+        for item in series:
+            if not isinstance(item, dict) or not item.get("uid"):
+                errors.append("MISSING_IMAGING_SERIES_UID")
+            if not isinstance(item, dict) or not (item.get("modality") or {}).get("code"):
+                errors.append("MISSING_IMAGING_SERIES_MODALITY")
     return errors
 
 
@@ -131,6 +145,44 @@ def normalize_resource(resource: dict[str, Any]) -> dict[str, Any]:
             "status": resource.get("status"),
             "coverage_start": period.get("start"),
             "coverage_end": period.get("end"),
+        }
+    if resource_type == "ImagingStudy":
+        identifiers = resource.get("identifier") or []
+        study_uid = next(
+            (identifier.get("value") for identifier in identifiers if identifier.get("system") == "urn:dicom:uid"),
+            None,
+        )
+        accession = next(
+            (identifier.get("value") for identifier in identifiers if identifier.get("system") != "urn:dicom:uid"),
+            None,
+        )
+        return base | {
+            "patient_id": reference_id((resource.get("subject") or {}).get("reference")),
+            "encounter_id": reference_id((resource.get("encounter") or {}).get("reference")),
+            "status": resource.get("status"),
+            "started_at": resource.get("started"),
+            "study_uid": study_uid,
+            "accession_identifier": accession,
+            "number_of_series": resource.get("numberOfSeries"),
+            "number_of_instances": resource.get("numberOfInstances"),
+            "series": [
+                {
+                    "series_uid": item.get("uid"),
+                    "series_number": item.get("number"),
+                    "modality": {
+                        "system": (item.get("modality") or {}).get("system"),
+                        "code": (item.get("modality") or {}).get("code"),
+                        "display": (item.get("modality") or {}).get("display"),
+                    },
+                    "body_site": {
+                        "system": (item.get("bodySite") or {}).get("system"),
+                        "code": (item.get("bodySite") or {}).get("code"),
+                        "display": (item.get("bodySite") or {}).get("display"),
+                    },
+                    "number_of_instances": item.get("numberOfInstances"),
+                }
+                for item in resource.get("series") or []
+            ],
         }
     if resource_type in {"Condition", "Procedure", "MedicationRequest"}:
         subject = resource.get("subject") or {}

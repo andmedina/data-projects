@@ -109,6 +109,8 @@ psql "postgresql://healthcare_app:change-me@localhost:55432/healthcare_clinical_
 
 `fhir-pipeline` and `core-load` refresh OMOP IDs automatically. The reconciliation output must show equal source and extract counts for all eight domains. Review `omop.source_to_standard_concept_status`; concept ID `0` means unresolved mapping. These views are not an OMOP-conformant CDM and must not be used as one.
 
+The deterministic generator also emits one metadata-only ImagingStudy for every fourth patient. After loading it, run the gate and `tickets/DE-010_imaging_metadata/validation.sql`; declared series and instance counts and modality completeness must have zero violations. No pixel files are created.
+
 Run the persistent quality gate before exporting:
 
 ```bash

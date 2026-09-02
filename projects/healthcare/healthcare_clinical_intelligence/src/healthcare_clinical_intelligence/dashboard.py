@@ -68,6 +68,12 @@ EXPORT_QUERIES = {
         from omop.source_to_standard_concept_status
         order by domain_id, source_vocabulary, source_code
     """,
+    "imaging_activity_monthly": """
+        select reporting_month, imaging_studies, patients_with_imaging,
+               imaging_series, imaging_instances, distinct_modalities
+        from mart.imaging_activity_monthly
+        order by reporting_month
+    """,
     "clinical_activity_monthly": """
         select reporting_month, patients_with_activity, conditions, procedures,
                medication_requests, total_clinical_activities

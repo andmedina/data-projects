@@ -142,6 +142,8 @@ def database_quality_report(connection: Any) -> dict[str, int]:
         "omop_measurements": "select count(*) from omop.measurement",
         "omop_drug_exposures": "select count(*) from omop.drug_exposure",
         "omop_payer_plan_periods": "select count(*) from omop.payer_plan_period",
+        "imaging_studies": "select count(*) from core.imaging_study",
+        "imaging_series": "select count(*) from core.imaging_series",
         "orphan_observations": QUALITY_CHECK_QUERIES["orphan_observations"],
         "invalid_encounter_periods": QUALITY_CHECK_QUERIES["invalid_encounter_periods"],
         "active_coverages_missing_period": QUALITY_CHECK_QUERIES["active_coverages_missing_period"],

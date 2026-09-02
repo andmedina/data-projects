@@ -11,6 +11,7 @@
 | `Organization` | provider or payer organization | `id`, name, type when present | referenced by Coverage payor |
 | `Practitioner` | provider identity | `id`, name when present | available for future Encounter/Procedure attribution |
 | `Coverage` | patient coverage relationship and eligibility period | `id`, status, beneficiary reference, payor reference, period start/end | references Patient and Organization; supplies payer member months |
+| `ImagingStudy` | metadata-only imaging study and series | `id`, status, subject, started time, series UID/modality | references Patient and optionally Encounter; retains DICOM UID/modality and body-site metadata without pixels |
 
 ## Coding extraction
 

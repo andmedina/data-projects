@@ -132,6 +132,31 @@ create index if not exists ix_coverage_member_period
     on core.coverage (patient_id, payer_organization_id, coverage_start, coverage_end)
     where coverage_status = 'active';
 
+create table if not exists core.imaging_study (
+    imaging_study_id text primary key,
+    patient_id text not null references core.patient(patient_id),
+    encounter_id text references core.encounter(encounter_id),
+    study_status text not null,
+    started_at timestamptz not null,
+    study_uid text,
+    accession_identifier text,
+    number_of_series integer check (number_of_series is null or number_of_series >= 0),
+    number_of_instances integer check (number_of_instances is null or number_of_instances >= 0),
+    source_raw_resource_id bigint unique references raw.fhir_resource(raw_resource_id)
+);
+
+create table if not exists core.imaging_series (
+    imaging_study_id text not null references core.imaging_study(imaging_study_id),
+    series_uid text not null,
+    series_number integer,
+    modality_system text,
+    modality_code text not null,
+    body_site_system text,
+    body_site_code text,
+    number_of_instances integer check (number_of_instances is null or number_of_instances >= 0),
+    primary key (imaging_study_id, series_uid)
+);
+
 create table if not exists core.condition_occurrence (
     condition_id text primary key,
     patient_id text not null references core.patient(patient_id),

@@ -93,6 +93,29 @@ def test_coverage_missing_period_boundaries_is_rejected():
     assert "MISSING_COVERAGE_PAYOR" in errors
 
 
+def test_imaging_study_metadata_is_validated_and_normalized():
+    study = {
+        "resourceType": "ImagingStudy", "id": "img-1", "status": "available",
+        "subject": {"reference": "Patient/p1"}, "encounter": {"reference": "Encounter/e1"},
+        "started": "2025-01-20T10:00:00Z", "numberOfSeries": 1, "numberOfInstances": 3,
+        "identifier": [{"system": "urn:dicom:uid", "value": "urn:oid:1.2.3"}],
+        "series": [{
+            "uid": "1.2.3.1", "number": 1, "numberOfInstances": 3,
+            "modality": {"system": "http://dicom.nema.org/resources/ontology/DCM", "code": "CT"},
+            "bodySite": {"system": "http://snomed.info/sct", "code": "51185008"},
+        }],
+    }
+
+    assert validate_resource(study) == []
+    canonical = normalize_resource(study)
+    assert canonical["study_uid"] == "urn:oid:1.2.3"
+    assert canonical["series"][0]["modality"]["code"] == "CT"
+    assert canonical["number_of_instances"] == 3
+
+    study["series"][0].pop("modality")
+    assert "MISSING_IMAGING_SERIES_MODALITY" in validate_resource(study)
+
+
 def test_lab_incident_fixtures_show_missing_then_corrected_value(tmp_path: Path):
     missing_dir = tmp_path / "missing"
     corrected_dir = tmp_path / "corrected"

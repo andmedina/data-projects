@@ -19,6 +19,7 @@ The optional model report is validated as JSON and copied into the bundle. `mani
 | `ed_utilization_eligible_monthly.csv` | Population health | reporting month and payer organization |
 | `omop_domain_row_count.csv` | Interoperability | OMOP-compatible extract domain |
 | `omop_vocabulary_status.csv` | Interoperability | source domain/vocabulary/code |
+| `imaging_activity_monthly.csv` | Imaging operations | reporting month |
 | `clinical_activity_monthly.csv` | Clinical activity | reporting month |
 | `claim_cost_monthly.csv` | Claims cost | reporting month |
 | `lab_result_completeness_monthly.csv` | Laboratory completeness | reporting month |
@@ -36,6 +37,8 @@ Run `quality-gate` before the export so the data-trust page receives the latest 
 The population-health page should show member months, eligible ED encounters, patients with an eligible ED encounter, and encounters per 1,000 member months together. It must disclose the calendar-month eligibility rule, non-proration of partial months, and synthetic-only scope.
 
 The interoperability page must label the objects OMOP-compatible extract views, display source versus extract row counts, and show the vocabulary backlog. A `target_concept_id` of `0` is unresolved standardization, not a valid mapped clinical concept.
+
+The imaging page may display metadata volumes only: studies, patients, series, instances, and modality diversity. It must not imply image interpretation, diagnostic quality, radiation dose, or pixel availability.
 
 The laboratory page should display final-result volume, populated values, documented absent reasons, unexplained missing results, and completeness percentage together. It must state that completeness is a data-pipeline measure rather than clinical interpretation.
 

@@ -109,6 +109,12 @@ The vocabulary inventory contained ten source-code groups. The three controlled 
 
 The governed-model dashboard bundle expanded to 17 datasets: OMOP domain reconciliation exported eight rows, vocabulary status exported ten rows, and `data_quality.csv` exported all 23 latest controls. This evidence supports an OMOP-compatible extract claim only; it does not establish full CDM conformance.
 
+## ImagingStudy metadata
+
+On September 1, 2026, the deterministic 100-patient Bundle expanded to 1,578 resources by adding 25 metadata-only ImagingStudy records. The file path accepted all 1,578. The shared database load inserted the 25 new studies, recognized the other 1,553 payloads as duplicates, rejected none, and populated 25 study headers plus 25 series rows.
+
+The 26-control gate reported 24 passes, the two established warnings, no failures, and zero blocking results. Independent validation reconciled 25 declared series and 100 declared instances: CT contributed 12 series/48 instances and MR contributed 13 series/52 instances. It found no unresolved patient/encounter links, count discrepancies, missing modalities, or duplicate synthetic study/series UIDs. The dashboard bundle expanded to 18 datasets with 12 monthly imaging rows and all 26 latest quality results. No pixel or binary resource is part of the model.
+
 ## Persistent data-quality gate
 
 DE-005 added eight database-configured checks with durable run and result history. Live normal-mode evaluation persisted eight results: seven passed and the FHIR quarantine-volume control warned because two deliberately malformed fixtures remain retained. All error-severity controls passed, so the overall state was `passed_with_warnings` with zero blocking results.

@@ -109,6 +109,30 @@ QUALITY_CHECK_QUERIES = {
         select count(*) from omop.source_to_standard_concept_status
         where not mapped_to_standard
     """,
+    "imaging_study_series_mismatches": """
+        select count(*) from (
+            select study.imaging_study_id
+            from core.imaging_study study
+            left join core.imaging_series series on series.imaging_study_id = study.imaging_study_id
+            group by study.imaging_study_id, study.number_of_series
+            having study.number_of_series is not null
+               and study.number_of_series <> count(series.series_uid)
+        ) mismatch
+    """,
+    "imaging_study_instance_mismatches": """
+        select count(*) from (
+            select study.imaging_study_id
+            from core.imaging_study study
+            left join core.imaging_series series on series.imaging_study_id = study.imaging_study_id
+            group by study.imaging_study_id, study.number_of_instances
+            having study.number_of_instances is not null
+               and study.number_of_instances <> coalesce(sum(series.number_of_instances), 0)
+        ) mismatch
+    """,
+    "imaging_series_missing_modality": """
+        select count(*) from core.imaging_series
+        where nullif(btrim(modality_code), '') is null
+    """,
     "claim_header_line_mismatches": """
         select count(*) from (
             select c.claim_id
