@@ -56,6 +56,18 @@ EXPORT_QUERIES = {
         from mart.ed_utilization_eligible_monthly
         order by reporting_month, payer_organization_id
     """,
+    "omop_domain_row_count": """
+        select domain_name, source_rows, omop_rows,
+               source_rows - omop_rows as row_difference
+        from omop.domain_row_count
+        order by domain_name
+    """,
+    "omop_vocabulary_status": """
+        select domain_id, source_vocabulary, source_code, target_concept_id,
+               source_rows, mapped_to_standard
+        from omop.source_to_standard_concept_status
+        order by domain_id, source_vocabulary, source_code
+    """,
     "clinical_activity_monthly": """
         select reporting_month, patients_with_activity, conditions, procedures,
                medication_requests, total_clinical_activities

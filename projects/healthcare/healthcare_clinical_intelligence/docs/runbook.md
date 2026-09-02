@@ -97,6 +97,18 @@ PYTHONPATH=src python -m healthcare_clinical_intelligence.cli dashboard-export -
 
 Pass `--model-report output/readmission_baseline_report.json` to add model governance, calibration, subgroup, and approval-check datasets plus the governed model artifacts to the bundle.
 
+## OMOP-compatible subset
+
+Apply the latest migration, then refresh stable identifiers after any direct canonical-data change:
+
+```bash
+PYTHONPATH=src python -m healthcare_clinical_intelligence.cli db-migrate --dsn "postgresql://healthcare_app:change-me@localhost:55432/healthcare_clinical_intelligence"
+PYTHONPATH=src python -m healthcare_clinical_intelligence.cli omop-refresh --dsn "postgresql://healthcare_app:change-me@localhost:55432/healthcare_clinical_intelligence"
+psql "postgresql://healthcare_app:change-me@localhost:55432/healthcare_clinical_intelligence" -f tickets/DE-009_omop_compatible_subset/validation.sql
+```
+
+`fhir-pipeline` and `core-load` refresh OMOP IDs automatically. The reconciliation output must show equal source and extract counts for all eight domains. Review `omop.source_to_standard_concept_status`; concept ID `0` means unresolved mapping. These views are not an OMOP-conformant CDM and must not be used as one.
+
 Run the persistent quality gate before exporting:
 
 ```bash

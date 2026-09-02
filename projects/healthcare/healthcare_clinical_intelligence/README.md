@@ -16,7 +16,7 @@ Phase 1 establishes a reproducible clinical/FHIR foundation:
 - ED intensity, eligibility-aware ED utilization, clinical-activity, and claims-cost marts with a dashboard export contract; and
 - typed laboratory values, a lab-result completeness mart, and a reproduced missing-result incident.
 
-The HAPI FHIR API, live PostgreSQL workflow, and Airflow execution are optional integration paths. The repository already includes controlled HL7 ADT/ORM/ORU persistence, claims adjudication modeling, dashboard-ready exports, and a temporally correct readmission-cohort export. OMOP and imaging remain later extensions.
+The HAPI FHIR API, live PostgreSQL workflow, and Airflow execution are optional integration paths. The repository already includes controlled HL7 ADT/ORM/ORU persistence, claims adjudication modeling, dashboard-ready exports, a temporally correct readmission-cohort export, and source-preserving OMOP v5.4-compatible views. Full OMOP conformance and imaging remain later extensions.
 
 ## Architecture
 
@@ -58,10 +58,11 @@ Implemented locally:
 - incremental FHIR API client and PostgreSQL checkpoint design;
 - deterministic synthetic FHIR generation, database-backed dashboard bundle, and temporal readmission cohort export;
 - typed Coverage periods, distinct payer member-month denominators, and ED encounters per 1,000 eligible member months;
+- eight OMOP v5.4-compatible extract views with stable integer IDs, observation-period derivation, reconciliation, and vocabulary-gap reporting;
 - governed logistic-regression readmission baseline with strict patient/time separation, calibration, subgroup review, experiment registry, model card, and technical approval gate; and
 - PostgreSQL/Airflow/HAPI configuration and CI test coverage.
 
-The Docker PostgreSQL, Airflow, and HAPI FHIR API workflows have been validated locally; see [validation evidence](docs/validation_evidence.md). OMOP and imaging remain later extensions. See the [runbook](docs/runbook.md) for runnable commands.
+The Docker PostgreSQL, Airflow, and HAPI FHIR API workflows have been validated locally; see [validation evidence](docs/validation_evidence.md). Full OMOP conformance and imaging remain later extensions. See the [runbook](docs/runbook.md) for runnable commands.
 
 ## Portfolio relationship
 

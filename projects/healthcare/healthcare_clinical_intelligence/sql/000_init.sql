@@ -14,3 +14,5 @@
 \ir marts/033_lab_result_completeness.sql
 \ir marts/034_hl7_operational.sql
 \ir marts/035_population_health.sql
+\ir omop/050_omop_subset.sql
+\ir omop/051_refresh_omop_ids.sql

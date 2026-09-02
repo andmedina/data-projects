@@ -18,4 +18,6 @@ Synthetic FHIR encounters → accepted canonical file records → readmission co
 
 canonical core/claim/quarantine tables → named checks in `quality.py` → `operational.quality_run` + `operational.quality_result` → Airflow gate + dashboard data-trust page.
 
+canonical patient/coverage/clinical events → `omop.entity_id_map` → eight OMOP v5.4-compatible views → domain reconciliation + vocabulary-status datasets → dashboard interoperability page.
+
 Every raw row retains source system, resource type, source ID, payload hash, and pipeline run ID. These fields support replay and reconciliation.

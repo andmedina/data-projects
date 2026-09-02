@@ -26,6 +26,9 @@ Default error-severity checks enforce:
 - encounter temporal validity;
 - completed ED encounter reporting timestamps;
 - complete, ordered, non-overlapping active Coverage periods at patient/payer grain;
+- OMOP-compatible PERSON and event source-to-view reconciliation;
+- one OMOP-compatible OBSERVATION_PERIOD for every extracted PERSON; and
+- OMOP-compatible event-to-PERSON/VISIT referential integrity;
 - claim-line referential integrity;
 - exact claim header-to-line financial reconciliation;
 - exact claim-line summary-to-adjustment-detail reconciliation;
@@ -37,7 +40,7 @@ Default error-severity checks enforce:
 - final laboratory result or documented absent-reason completeness; and
 - final laboratory effective-time completeness.
 
-FHIR, claim, and HL7 quarantine volumes are warning-severity checks. This keeps deliberately invalid test fixtures visible without failing a normal development pipeline. Use strict mode for a zero-warning release gate.
+FHIR, claim, and HL7 quarantine volumes are warning-severity checks. OMOP source terminology without a governed Standard Concept mapping is also a warning. This keeps deliberate test fixtures and known standardization debt visible without failing a normal development pipeline. Use strict mode for a zero-warning release gate.
 
 ```bash
 PYTHONPATH=src python -m healthcare_clinical_intelligence.cli quality-gate \

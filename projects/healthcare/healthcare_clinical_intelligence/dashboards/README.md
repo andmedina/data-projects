@@ -1,6 +1,6 @@
 # Dashboard Data Product
 
-Power BI is the planned dashboard client. The database-backed export command creates one refreshable bundle containing executive, ED intensity, eligibility-aware population health, clinical-activity, claims-cost, laboratory-completeness, HL7 current-state, quality, and pipeline-operability datasets:
+Power BI is the planned dashboard client. The database-backed export command creates one refreshable bundle containing executive, ED intensity, eligibility-aware population health, OMOP interoperability, clinical-activity, claims-cost, laboratory-completeness, HL7 current-state, quality, and pipeline-operability datasets:
 
 ```bash
 PYTHONPATH=src python -m healthcare_clinical_intelligence.cli dashboard-export \
@@ -17,6 +17,8 @@ The optional model report is validated as JSON and copied into the bundle. `mani
 | `ed_utilization_monthly.csv` | ED activity | reporting month |
 | `member_eligibility_monthly.csv` | Population health | reporting month and payer organization |
 | `ed_utilization_eligible_monthly.csv` | Population health | reporting month and payer organization |
+| `omop_domain_row_count.csv` | Interoperability | OMOP-compatible extract domain |
+| `omop_vocabulary_status.csv` | Interoperability | source domain/vocabulary/code |
 | `clinical_activity_monthly.csv` | Clinical activity | reporting month |
 | `claim_cost_monthly.csv` | Claims cost | reporting month |
 | `lab_result_completeness_monthly.csv` | Laboratory completeness | reporting month |
@@ -32,6 +34,8 @@ The optional model report is validated as JSON and copied into the bundle. `mani
 Run `quality-gate` before the export so the data-trust page receives the latest persisted results. Use the metric definitions in `docs/metric_dictionary.md`. Display the data refresh timestamp and validation status on every published page. Keep `ed_utilization_monthly` labeled as observed-user intensity; use `ed_utilization_eligible_monthly` for the payer member-month rate.
 
 The population-health page should show member months, eligible ED encounters, patients with an eligible ED encounter, and encounters per 1,000 member months together. It must disclose the calendar-month eligibility rule, non-proration of partial months, and synthetic-only scope.
+
+The interoperability page must label the objects OMOP-compatible extract views, display source versus extract row counts, and show the vocabulary backlog. A `target_concept_id` of `0` is unresolved standardization, not a valid mapped clinical concept.
 
 The laboratory page should display final-result volume, populated values, documented absent reasons, unexplained missing results, and completeness percentage together. It must state that completeness is a data-pipeline measure rather than clinical interpretation.
 

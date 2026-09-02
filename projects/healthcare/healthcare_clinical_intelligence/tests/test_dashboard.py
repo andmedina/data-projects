@@ -67,6 +67,13 @@ def test_dashboard_includes_eligibility_aware_population_health_contracts() -> N
     assert "ed_encounters_per_1000_member_months" in EXPORT_QUERIES["ed_utilization_eligible_monthly"]
 
 
+def test_dashboard_includes_omop_reconciliation_and_vocabulary_status() -> None:
+    assert "omop_domain_row_count" in EXPORT_QUERIES
+    assert "omop_vocabulary_status" in EXPORT_QUERIES
+    assert "source_rows - omop_rows" in EXPORT_QUERIES["omop_domain_row_count"]
+    assert "mapped_to_standard" in EXPORT_QUERIES["omop_vocabulary_status"]
+
+
 def test_dashboard_exports_governed_model_datasets_and_artifacts(tmp_path: Path) -> None:
     report = {
         "experiment_id": "exp-001",

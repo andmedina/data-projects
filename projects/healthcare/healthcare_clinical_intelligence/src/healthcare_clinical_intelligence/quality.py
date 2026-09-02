@@ -44,6 +44,71 @@ QUALITY_CHECK_QUERIES = {
           and second_coverage.coverage_start is not null
           and second_coverage.coverage_end is not null
     """,
+    "omop_person_reconciliation": """
+        select count(*) from omop.domain_row_count
+        where domain_name = 'person'
+          and source_rows <> omop_rows
+    """,
+    "omop_persons_missing_observation_period": """
+        select count(*)
+        from omop.person person
+        left join omop.observation_period period on period.person_id = person.person_id
+        where period.observation_period_id is null
+    """,
+    "omop_event_reconciliation": """
+        select count(*) from omop.domain_row_count
+        where domain_name <> 'person'
+          and source_rows <> omop_rows
+    """,
+    "omop_orphan_events": """
+        select count(*) from (
+            select visit.visit_occurrence_id as event_id
+            from omop.visit_occurrence visit
+            left join omop.person person on person.person_id = visit.person_id
+            where person.person_id is null
+            union all
+            select condition.condition_occurrence_id
+            from omop.condition_occurrence condition
+            left join omop.person person on person.person_id = condition.person_id
+            left join omop.visit_occurrence visit
+              on visit.visit_occurrence_id = condition.visit_occurrence_id
+            where person.person_id is null
+               or (condition.visit_occurrence_id is not null and visit.visit_occurrence_id is null)
+            union all
+            select procedure.procedure_occurrence_id
+            from omop.procedure_occurrence procedure
+            left join omop.person person on person.person_id = procedure.person_id
+            left join omop.visit_occurrence visit
+              on visit.visit_occurrence_id = procedure.visit_occurrence_id
+            where person.person_id is null
+               or (procedure.visit_occurrence_id is not null and visit.visit_occurrence_id is null)
+            union all
+            select measurement.measurement_id
+            from omop.measurement measurement
+            left join omop.person person on person.person_id = measurement.person_id
+            left join omop.visit_occurrence visit
+              on visit.visit_occurrence_id = measurement.visit_occurrence_id
+            where person.person_id is null
+               or (measurement.visit_occurrence_id is not null and visit.visit_occurrence_id is null)
+            union all
+            select drug.drug_exposure_id
+            from omop.drug_exposure drug
+            left join omop.person person on person.person_id = drug.person_id
+            left join omop.visit_occurrence visit
+              on visit.visit_occurrence_id = drug.visit_occurrence_id
+            where person.person_id is null
+               or (drug.visit_occurrence_id is not null and visit.visit_occurrence_id is null)
+            union all
+            select payer.payer_plan_period_id
+            from omop.payer_plan_period payer
+            left join omop.person person on person.person_id = payer.person_id
+            where person.person_id is null
+        ) orphan_event
+    """,
+    "omop_unmapped_source_codes": """
+        select count(*) from omop.source_to_standard_concept_status
+        where not mapped_to_standard
+    """,
     "claim_header_line_mismatches": """
         select count(*) from (
             select c.claim_id

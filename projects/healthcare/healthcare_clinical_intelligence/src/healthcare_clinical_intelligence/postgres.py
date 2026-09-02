@@ -134,6 +134,14 @@ def database_quality_report(connection: Any) -> dict[str, int]:
         "conditions": "select count(*) from core.condition_occurrence",
         "procedures": "select count(*) from core.procedure_occurrence",
         "medication_requests": "select count(*) from core.medication_request",
+        "omop_persons": "select count(*) from omop.person",
+        "omop_observation_periods": "select count(*) from omop.observation_period",
+        "omop_visits": "select count(*) from omop.visit_occurrence",
+        "omop_conditions": "select count(*) from omop.condition_occurrence",
+        "omop_procedures": "select count(*) from omop.procedure_occurrence",
+        "omop_measurements": "select count(*) from omop.measurement",
+        "omop_drug_exposures": "select count(*) from omop.drug_exposure",
+        "omop_payer_plan_periods": "select count(*) from omop.payer_plan_period",
         "orphan_observations": QUALITY_CHECK_QUERIES["orphan_observations"],
         "invalid_encounter_periods": QUALITY_CHECK_QUERIES["invalid_encounter_periods"],
         "active_coverages_missing_period": QUALITY_CHECK_QUERIES["active_coverages_missing_period"],
@@ -154,13 +162,31 @@ def run_fhir_database_pipeline(connection: Any, payload: dict[str, Any], sql_roo
     """Load raw FHIR, build the core model, and return auditable quality results."""
     ingestion = load_fhir_payload(connection, payload, source_system)
     execute_sql_file(connection, sql_root / "core" / "021_load_core.sql")
+    execute_sql_file(connection, sql_root / "omop" / "051_refresh_omop_ids.sql")
     return {"ingestion": ingestion, "quality": database_quality_report(connection)}
 
 
 def load_core_and_report(connection: Any, sql_root: Path) -> dict[str, int]:
     """Run only the idempotent staging-to-core transformation and its quality report."""
     execute_sql_file(connection, sql_root / "core" / "021_load_core.sql")
+    execute_sql_file(connection, sql_root / "omop" / "051_refresh_omop_ids.sql")
     return database_quality_report(connection)
+
+
+def refresh_omop_subset(connection: Any, sql_root: Path) -> list[dict[str, int | str]]:
+    """Assign stable OMOP extract IDs and return source-to-view row reconciliation."""
+    execute_sql_file(connection, sql_root / "omop" / "051_refresh_omop_ids.sql")
+    with connection.cursor() as cursor:
+        cursor.execute(
+            """select domain_name, source_rows, omop_rows
+               from omop.domain_row_count
+               order by domain_name"""
+        )
+        rows = cursor.fetchall()
+    return [
+        {"domain_name": str(domain), "source_rows": int(source_rows), "omop_rows": int(omop_rows)}
+        for domain, source_rows, omop_rows in rows
+    ]
 
 
 def load_claims_csv(connection: Any, input_path: Path, source_system: str = "synthetic_claims") -> dict[str, int | str]:

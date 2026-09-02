@@ -32,6 +32,17 @@
 | `mart.lab_result_completeness_monthly` | laboratory result month | `reporting_month` |
 | `mart.hl7_encounter_current_state` | one latest state per HL7 encounter | `encounter_id` |
 | `mart.hl7_order_current_state` | one latest event per HL7 order | `order_id` |
+| `omop.entity_id_map` | one stable integer ID per entity type/source ID | `entity_type` + `source_id` |
+| `omop.person` | one qualified canonical patient | `person_id` |
+| `omop.observation_period` | one non-overlapping observable period per person/island | `observation_period_id` |
+| `omop.visit_occurrence` | one canonical encounter with a start timestamp | `visit_occurrence_id` |
+| `omop.condition_occurrence` | one timestamped canonical condition | `condition_occurrence_id` |
+| `omop.procedure_occurrence` | one timestamped canonical procedure | `procedure_occurrence_id` |
+| `omop.measurement` | one timestamped canonical laboratory observation | `measurement_id` |
+| `omop.drug_exposure` | one timestamped MedicationRequest order proxy | `drug_exposure_id` |
+| `omop.payer_plan_period` | one active complete Coverage period | `payer_plan_period_id` |
+
+The `omop` objects are v5.4-compatible extract views, not a conformant CDM instance. Most Standard Concept fields are deliberately `0`; consult `omop.source_to_standard_concept_status` before interpreting terminology.
 
 `core.observation` retains source category and code, effective time, explicit value type, separate numeric/text/boolean/coded value fields, Quantity unit/system/code, documented absent reason, and the raw source-version key. Typed fields must not be coalesced when validating result completeness.
 

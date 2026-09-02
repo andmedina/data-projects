@@ -9,6 +9,7 @@
 | Staging | Parsed, typed, normalized records | patient, encounter, observation, condition, procedure, medication, coverage, latest claims-line views |
 | Core | Canonical healthcare relationships | clinical entities, claim header/detail and dimensions, HL7 encounter/order/result events |
 | Analytics | Purpose-built, documented queries | ED intensity, eligibility-aware utilization, clinical activity, claims-cost, lab-completeness, and HL7 current-state marts |
+| Standardization | Explicit interoperability extracts | source-preserving OMOP v5.4-compatible views, stable ID bridge, vocabulary-gap inventory |
 | Delivery | Reproducible consumer contracts | dashboard CSV bundle, manifest, validation evidence, governed model artifacts |
 
 ## Reliability controls
@@ -25,6 +26,7 @@
 - Dashboard extracts are rebuilt from PostgreSQL and accompanied by a timestamped row-count manifest.
 - Quality definitions, thresholds, gate runs, and individual results persist in the operational schema; critical failures propagate a nonzero process exit to Airflow.
 - Model runs retain deterministic experiment identity, holdout predictions, calibration/subgroup evidence, an idempotent registry, a model card, and a non-clinical technical approval result.
+- OMOP-compatible views reconcile qualified canonical rows, preserve stable source-to-integer ID mappings, and warn on every source terminology group that lacks governed Standard Concept mapping.
 
 ## FHIR mapping principles
 

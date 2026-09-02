@@ -5,7 +5,7 @@ import json
 from pathlib import Path
 
 from .pipeline import run_claims_file, run_fhir_file, run_hl7_file
-from .postgres import database_quality_report, execute_sql_file, load_claims_csv, load_core_and_report, load_fhir_incremental, load_fhir_payload, load_hl7_file, open_connection, run_claims_database_pipeline, run_fhir_database_pipeline
+from .postgres import database_quality_report, execute_sql_file, load_claims_csv, load_core_and_report, load_fhir_incremental, load_fhir_payload, load_hl7_file, open_connection, refresh_omop_subset, run_claims_database_pipeline, run_fhir_database_pipeline
 from .synthetic import generate_fhir_bundle
 from .analytics import clinical_activity_from_accepted, ed_utilization_from_accepted, eligible_ed_utilization_from_accepted
 from .ml import export_readmission_cohort
@@ -97,6 +97,9 @@ def main() -> None:
     core = subparsers.add_parser("core-load", help="Run idempotent staging-to-core transformations and quality checks")
     core.add_argument("--dsn", required=True)
     core.add_argument("--sql-root", type=Path, default=Path("sql"))
+    omop = subparsers.add_parser("omop-refresh", help="Refresh stable OMOP subset identifiers and reconciliation counts")
+    omop.add_argument("--dsn", required=True)
+    omop.add_argument("--sql-root", type=Path, default=Path("sql"))
     quality = subparsers.add_parser("quality-report", help="Return core data-quality summary counts")
     quality.add_argument("--dsn", required=True)
     dashboard = subparsers.add_parser("dashboard-export", help="Export dashboard-ready PostgreSQL datasets and a refresh manifest")
@@ -165,6 +168,9 @@ def main() -> None:
     elif args.command == "core-load":
         with open_connection(args.dsn) as connection:
             print(json.dumps(load_core_and_report(connection, args.sql_root), indent=2))
+    elif args.command == "omop-refresh":
+        with open_connection(args.dsn) as connection:
+            print(json.dumps({"domains": refresh_omop_subset(connection, args.sql_root)}, indent=2))
     elif args.command == "quality-report":
         with open_connection(args.dsn) as connection:
             print(json.dumps(database_quality_report(connection), indent=2))

@@ -51,3 +51,11 @@ def test_eligibility_controls_are_registered() -> None:
     assert "active_coverages_missing_period" in QUALITY_CHECK_QUERIES
     assert "overlapping_active_coverages" in QUALITY_CHECK_QUERIES
     assert "coverage_start" in QUALITY_CHECK_QUERIES["active_coverages_missing_period"]
+
+
+def test_omop_subset_controls_are_registered() -> None:
+    assert "omop_person_reconciliation" in QUALITY_CHECK_QUERIES
+    assert "omop_persons_missing_observation_period" in QUALITY_CHECK_QUERIES
+    assert "omop_event_reconciliation" in QUALITY_CHECK_QUERIES
+    assert "omop_orphan_events" in QUALITY_CHECK_QUERIES
+    assert "omop_unmapped_source_codes" in QUALITY_CHECK_QUERIES

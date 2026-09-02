@@ -99,6 +99,16 @@ In the shared development database, 58 completed ED encounters occurred during a
 
 The expanded gate evaluated 18 controls: 17 passed, the historical deliberate FHIR-quarantine volume warned, and no result was blocking. The refreshed dashboard bundle contained 15 datasets when the governed model artifacts were included, adding 12 member-eligibility rows and 12 eligibility-aware ED rows; `data_quality.csv` contained all 18 latest control results.
 
+## OMOP-compatible analytical subset
+
+On September 1, 2026, the OMOP identifier refresh populated stable mappings for eight v5.4-shaped extract domains. Independent validation reconciled 102 PERSON rows, 102 OBSERVATION_PERIOD rows, 345 VISIT_OCCURRENCE rows, 283 CONDITION_OCCURRENCE rows, 283 PROCEDURE_OCCURRENCE rows, 163 MEASUREMENT rows, 283 DRUG_EXPOSURE order proxies, and 100 PAYER_PLAN_PERIOD rows exactly to their qualified canonical sources. Repeated conflict-safe refreshes produced the same domain counts.
+
+Every extracted PERSON had an observation period. The 100 covered patients used merged active-Coverage evidence; the two legacy patients without Coverage used explicitly labeled clinical-event spans. Independent exception queries returned zero count differences, missing observation periods, overlapping/adjacent periods after merging, unresolved PERSON/VISIT relationships, duplicate mapped IDs, or controlled Visit classes mapped to concept `0`.
+
+The vocabulary inventory contained ten source-code groups. The three controlled Visit classes mapped to concepts 9201/9202/9203, while seven ICD-10-CM, CPT, LOINC, and medication code groups remained deliberately unmapped pending governed Athena vocabulary input. The 23-control release gate therefore reported 21 passes, two expected warnings (vocabulary backlog and retained deliberate FHIR rejects), no failures, and zero blocking results.
+
+The governed-model dashboard bundle expanded to 17 datasets: OMOP domain reconciliation exported eight rows, vocabulary status exported ten rows, and `data_quality.csv` exported all 23 latest controls. This evidence supports an OMOP-compatible extract claim only; it does not establish full CDM conformance.
+
 ## Persistent data-quality gate
 
 DE-005 added eight database-configured checks with durable run and result history. Live normal-mode evaluation persisted eight results: seven passed and the FHIR quarantine-volume control warned because two deliberately malformed fixtures remain retained. All error-severity controls passed, so the overall state was `passed_with_warnings` with zero blocking results.

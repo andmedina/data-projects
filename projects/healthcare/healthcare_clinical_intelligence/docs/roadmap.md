@@ -11,6 +11,7 @@
 - Typed FHIR laboratory result lineage, completeness mart, and a reproduced missing-result incident with recovery evidence.
 - ED activity, clinical activity, claims-cost marts, and dashboard export contract.
 - Typed Coverage periods, distinct payer member-month denominators, and eligibility-aware ED utilization.
+- Source-preserving OMOP v5.4-compatible PERSON, observation-period, visit, clinical-event, and payer-plan views with stable IDs and reconciliation.
 - Temporally valid readmission cohort, reproducible baseline model, calibration/subgroup evidence, experiment registry, model card, and synthetic-demo approval gate.
 
 ## Next extensions
@@ -22,7 +23,7 @@
 | HL7 interface hardening | Add interface-specific profiles, ACK/NACK handling, MLLP transport, escape/repetition rules, and timezone variants |
 | Model lifecycle hardening | Add external validation, confidence intervals, drift monitoring, accountable reviewers, and retraining/decommission controls when a non-synthetic use case exists |
 | Population-health hardening | Add continuous-enrollment rules, partial-month policy, risk adjustment, and an authoritative encounter-to-coverage attribution contract |
-| OMOP | Map a documented subset to OMOP CDM with vocabulary handling |
+| OMOP conformance | Load a governed Athena vocabulary release, complete required CDM tables, and run OHDSI Data Quality Dashboard/Achilles validation |
 | Imaging | Model ImagingStudy/radiology metadata and DICOM concepts without storing image pixels |
 
 Extensions should preserve the same source-fidelity, reconciliation, synthetic-only, and independent-validation standards.

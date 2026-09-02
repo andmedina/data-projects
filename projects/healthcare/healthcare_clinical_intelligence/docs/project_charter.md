@@ -16,11 +16,12 @@ The platform is designed to demonstrate skills relevant to healthcare data engin
 - FHIR reference parsing, validation, quarantine, idempotency, and reconciliation
 - ED intensity, eligibility-aware ED utilization, clinical-activity, claims-cost, and lab-completeness analytics
 - controlled claims with payer/provider/code/adjustment dimensions, HL7 paths, persistent quality gates, Airflow, dashboard exports, and a governed temporal ML baseline
+- source-preserving OMOP v5.4-compatible extract views with explicit vocabulary/conformance limitations
 
 ## Explicitly out of scope
 
 - real patient data or PHI
-- production X12/HL7 certification, production Power BI deployment, full OMOP, and DICOM pixel data
+- production X12/HL7 certification, production Power BI deployment, OMOP-conformant research CDM, and DICOM pixel data
 - clinical decision support, clinical interpretation, or clinical validation
 
 ## Success criteria
